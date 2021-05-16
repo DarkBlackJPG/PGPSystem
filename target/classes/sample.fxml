@@ -1,7 +1,56 @@
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.layout.GridPane?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<GridPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="874.0" prefWidth="1337.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
-</GridPane>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+   <children>
+      <TabPane prefHeight="600.0" prefWidth="800.0" tabClosingPolicy="UNAVAILABLE">
+        <tabs>
+          <Tab text="Encryption">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <Button fx:id="browseFileChooserTriggerButton" layoutX="198.0" layoutY="105.0" mnemonicParsing="false" onAction="#browseFiileAction" text="Browse" />
+                        <TextField fx:id="browseFileLocationTextField" layoutX="318.0" layoutY="105.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                        <CheckBox fx:id="useEncryptionCheckBox" layoutX="202.0" layoutY="170.0" mnemonicParsing="false" onAction="#useEncryptionChangeAction" selected="true" text="Use encryption" />
+                        <ChoiceBox fx:id="encryptionAlgorithmsChoiceBox" layoutX="322.0" layoutY="167.0" prefHeight="25.0" prefWidth="256.0" />
+                        <CheckBox fx:id="signCheckBox" layoutX="203.0" layoutY="237.0" mnemonicParsing="false" onAction="#signChangeAction" selected="true" text="Sign" />
+                        <ChoiceBox fx:id="signChoiceBox" layoutX="322.0" layoutY="233.0" prefHeight="25.0" prefWidth="256.0" />
+                        <CheckBox fx:id="compressionCheckBox" layoutX="202.0" layoutY="294.0" mnemonicParsing="false" onAction="#compressionChangeAction" selected="true" text="Use compression" />
+                        <CheckBox fx:id="base64ConversionCheckBox" layoutX="445.0" layoutY="294.0" mnemonicParsing="false" onAction="#base64ConversionChangeAction" selected="true" text="Base - 64 conversion" />
+                        <Button fx:id="sendButton" layoutX="383.0" layoutY="426.0" mnemonicParsing="false" onAction="#sendAction" text="Send" />
+                     </children>
+                  </AnchorPane>
+            </content>
+          </Tab>
+          <Tab text="Decryption">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+            </content>
+          </Tab>
+            <Tab text="Export Keys">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+              </content>
+            </Tab>
+            <Tab text="Import keys">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+              </content>
+            </Tab>
+            <Tab text="View keyrings">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+              </content>
+            </Tab>
+        </tabs>
+      </TabPane>
+   </children>
+</Pane>
