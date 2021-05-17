@@ -1,17 +1,22 @@
 package utility;
 
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
-import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.jcajce.provider.digest.SHA1;
+import org.bouncycastle.openpgp.*;
 
-import org.bouncycastle.openpgp.PGPKeyRingGenerator;
-import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 
-import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
-
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.Collections;
 
 /**
  * Sadrzi operacije koje se ticu kljuceva i obrade za keyring.
@@ -26,6 +31,7 @@ public class KeyManagement {
     private String privateKeyRingPath;
     private String publicKeyRingPath;
     private PGPKeyPair keyPair;
+    private PGPKeyRingGenerator keyRingGenerator;
 
     private static KeyManagement keyManagementInstance;
 
@@ -50,8 +56,9 @@ public class KeyManagement {
      * Postavi novi password za dohvatanje keyring-a
      * @param password String za password
      */
-    public void setPassword(String password) {
+    public KeyManagement setPassword(String password) {
         this.password = password;
+        return this;
     }
 
     /**
@@ -114,13 +121,32 @@ public class KeyManagement {
         this.keyPair = keyPair;
     }
 
+    /**
+     * Pravimo RSA keypair
+     * @param keySize
+     * @return
+     * @throws Exception
+     */
     public PGPKeyPair createPGPKeyPair(RSA.KeySizes keySize) throws Exception {
         RSA instance = RSA.RSA_GetUtility();
-        PGPKeyPair RSA_Pair = instance.RSA_SetKeySize(keySize).RSA_PGPKeyGenerator();
-        return RSA_Pair;
+        keyPair = instance.RSA_SetKeySize(keySize).RSA_PGPKeyGenerator();
+        return keyPair;
     }
 
-    public PGPKeyRingGenerator createPGPKeyRingGenerator() {
+    public PGPKeyRingGenerator getKeyRingGenerator() {
+        return keyRingGenerator;
+    }
+
+
+    /**
+     * Ne znam sta ovo tacno radi i kako radi, ali
+     * poenta je da ti imas keyring generator koji
+     * moze da generise nove kljuceve iz master kljuca
+     * Adrian nije dobro rekao na proslogodisnjim konsul
+     * @return
+     * @throws PGPException
+     */
+    public PGPKeyRingGenerator createPGPKeyRingGenerator() throws PGPException {
         PGPSignatureSubpacketGenerator signHashGen = new PGPSignatureSubpacketGenerator();
         signHashGen.setKeyFlags(false, KeyFlags.SIGN_DATA | KeyFlags.CERTIFY_OTHER);
         signHashGen.setPreferredSymmetricAlgorithms(false, new int[] {
@@ -130,11 +156,26 @@ public class KeyManagement {
         signHashGen.setPreferredHashAlgorithms(false, new int[] {
                 HashAlgorithmTags.SHA1
         });
-
-
         PGPSignatureSubpacketGenerator encHashGen = new PGPSignatureSubpacketGenerator();
         encHashGen.setKeyFlags(false, KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE);
 
-        return null;
+        keyRingGenerator =  new PGPKeyRingGenerator(
+            PGPSignature.DEFAULT_CERTIFICATION,
+            keyPair,
+            user,
+            new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
+            signHashGen.generate(),
+            encHashGen.generate(),
+            new BcPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1),
+            new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.IDEA).build(password.toCharArray())
+        );
+
+        return keyRingGenerator;
+    }
+
+    // TODO Implementirati cuvanje keyring-a
+    public void saveKeyrings() throws IOException, PGPException {
+
+
     }
 }

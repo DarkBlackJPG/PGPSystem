@@ -116,7 +116,6 @@ public class RSA {
         JcaPGPKeyPair jcaPGPKeyPair = new JcaPGPKeyPair(1, pair, new Date());
         PGPKeyPair keyPair = new PGPKeyPair(jcaPGPKeyPair.getPublicKey(), jcaPGPKeyPair.getPrivateKey());
         return keyPair;
-
     }
 
 }
