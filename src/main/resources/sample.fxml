@@ -32,7 +32,11 @@
           </Tab>
           <Tab text="Decryption">
             <content>
-              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <Button fx:id="browseDecryptionFileChooserTriggerButton" layoutX="208.0" layoutY="115.0" mnemonicParsing="false" onAction="#browseFiileAction" text="Browse" />
+                        <TextField fx:id="browseDecryptionFileLocationTextField" layoutX="328.0" layoutY="115.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                     </children></AnchorPane>
             </content>
           </Tab>
             <Tab text="Export Keys">
