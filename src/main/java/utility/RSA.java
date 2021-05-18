@@ -112,10 +112,8 @@ public class RSA {
     public PGPKeyPair RSA_PGPKeyGenerator() throws Exception {
         keyPairGenerator.initialize(keySize.getKeySize());
         KeyPair pair = keyPairGenerator.generateKeyPair();
-        PGPDigestCalculator pgpDigestCalculator = (new JcaPGPDigestCalculatorProviderBuilder()).build().get(2);
         JcaPGPKeyPair jcaPGPKeyPair = new JcaPGPKeyPair(1, pair, new Date());
-        PGPKeyPair keyPair = new PGPKeyPair(jcaPGPKeyPair.getPublicKey(), jcaPGPKeyPair.getPrivateKey());
-        return keyPair;
+        return new PGPKeyPair(jcaPGPKeyPair.getPublicKey(), jcaPGPKeyPair.getPrivateKey());
     }
 
 }

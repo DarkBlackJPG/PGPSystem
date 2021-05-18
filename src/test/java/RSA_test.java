@@ -1,26 +1,28 @@
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.openpgp.PGPKeyPair;
-import org.bouncycastle.openpgp.PGPKeyRingGenerator;
-import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
+import org.bouncycastle.openpgp.*;
 import utility.KeyManagement;
 import utility.RSA;
+import utility.User;
 
 import java.security.KeyPair;
 
 public class RSA_test {
     public static void main(String[] args) {
+        String name = "Stefan Teslic";
+        String email = "stefant@gmail.com";
+        String pass = "123";
+
+        User.loginUser(name, email, pass);
+
 
         try {
-            KeyManagement keyManagementUtil = KeyManagement.getInstance();
-            keyManagementUtil.createPGPKeyPair(RSA.KeySizes.RSA1024);
-            keyManagementUtil.setUser("Stefan Teslic").setPassword("pwd");
-            keyManagementUtil.createPGPKeyRingGenerator();
-            keyManagementUtil.saveKeyrings();
-
+            KeyManagement keyManagement = new KeyManagement();
+            keyManagement.generateKeyring(RSA.KeySizes.RSA2048);
+            keyManagement.saveKeyrings();
+            PGPSecretKey s = keyManagement.getAsymmetricSigningKey();
+            System.out.println();
         } catch (Exception e) {
-            System.out.println("asdas");
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
-
     }
 }
