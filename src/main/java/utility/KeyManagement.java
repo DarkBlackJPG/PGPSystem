@@ -1,5 +1,7 @@
 package utility;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -12,7 +14,9 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 
 import java.io.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 /**
@@ -28,7 +32,7 @@ public class KeyManagement {
     final private String secretKeyringPath = "secret.skr";
     final private String publicKeyringPath = "public.pkr";
     private User activeUser;
-    final private long expiryMiliSeconds = 1000L * 60 * 60 * 24 * 365;
+    final private long secondsToExpire = 31622400 ;
 
     private void initializeKeyRingCollection() throws IOException, PGPException {
         keyRingCollection = null;
@@ -59,10 +63,11 @@ public class KeyManagement {
                 SymmetricKeyAlgorithmTags.TRIPLE_DES,
                 SymmetricKeyAlgorithmTags.IDEA
         });
+
         signHashGen.setPreferredHashAlgorithms(false, new int[] {
                 HashAlgorithmTags.SHA1
         });
-        signHashGen.setKeyExpirationTime(false, expiryMiliSeconds);
+        signHashGen.setKeyExpirationTime(false, secondsToExpire);
         PGPSignatureSubpacketGenerator encHashGen = new PGPSignatureSubpacketGenerator();
         encHashGen.setKeyFlags(false, KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE);
 
@@ -70,7 +75,7 @@ public class KeyManagement {
         keyRingGenerator = new PGPKeyRingGenerator(
                 PGPSignature.DEFAULT_CERTIFICATION,
                 masterKeyPair,
-                String.format("%s, %s",
+                String.format("%s <%s>",
                         activeUser.getName(),
                         activeUser.getEmail()),
                 new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
@@ -82,7 +87,7 @@ public class KeyManagement {
 
         if (keyRingCollection != null) {
             //todo
-            Iterator<PGPSecretKeyRing> pgpSecretKeyRingIterator =  keyRingCollection.getKeyRings(String.format("%s,%s", activeUser.getName(), activeUser.getEmail()));
+            Iterator<PGPSecretKeyRing> pgpSecretKeyRingIterator =  keyRingCollection.getKeyRings(String.format("%s <%s>", activeUser.getName(), activeUser.getEmail()));
             if (pgpSecretKeyRingIterator.hasNext()) {
                 keyRingGenerator = new PGPKeyRingGenerator(
                         pgpSecretKeyRingIterator.next(),
@@ -115,6 +120,24 @@ public class KeyManagement {
             return keyRingGenerator.generateSecretKeyRing().getSecretKey();
         }
         return null;
+    }
+
+    public static void exportPublicKey(PGPPublicKey pgpPublicKey, String exportedPublicKeyPath) throws IOException {
+        writeKeyToFile(exportedPublicKeyPath, pgpPublicKey.getEncoded());
+    }
+    public static void exportSecretKey(PGPSecretKey pgpSecretKey, String exportedSecretKeyPath) throws IOException {
+        writeKeyToFile(exportedSecretKeyPath, pgpSecretKey.getEncoded());
+    }
+
+    private static void writeKeyToFile(String exportedPublicKeyPath, byte[] encoded) throws IOException {
+        File extractedKey = new File(exportedPublicKeyPath);
+        extractedKey.createNewFile();
+        FileOutputStream os = new FileOutputStream(extractedKey);
+        ArmoredOutputStream armorOut = new ArmoredOutputStream(os);
+        armorOut.write(encoded);
+        armorOut.flush();
+        armorOut.close();
+        os.close();
     }
 
     private void writeToFile(String filename, PGPKeyRing keyRing) throws IOException {

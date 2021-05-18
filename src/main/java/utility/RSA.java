@@ -75,7 +75,7 @@ public class RSA {
      * @return RSA - graditelj pattern
      */
     public RSA RSA_SetKeySize(KeySizes keySize) {
-        keySize = keySize;
+        this.keySize = keySize;
         return this;
     }
 
