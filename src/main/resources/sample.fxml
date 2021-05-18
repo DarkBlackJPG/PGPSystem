@@ -3,8 +3,14 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.Pane?>
@@ -34,14 +40,26 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <Button fx:id="browseDecryptionFileChooserTriggerButton" layoutX="208.0" layoutY="115.0" mnemonicParsing="false" onAction="#browseFiileAction" text="Browse" />
-                        <TextField fx:id="browseDecryptionFileLocationTextField" layoutX="328.0" layoutY="115.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                        <Button fx:id="browseDecryptionFileChooserTriggerButton" layoutX="208.0" layoutY="70.0" mnemonicParsing="false" onAction="#browseFiileAction" text="Browse" />
+                        <TextField fx:id="browseDecryptionFileLocationTextField" layoutX="328.0" layoutY="70.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                        <Button layoutX="210.0" layoutY="121.0" mnemonicParsing="false" text="Decrypt and verify" />
+                        <TextArea disable="true" layoutX="208.0" layoutY="156.0" prefHeight="142.0" prefWidth="381.0" />
+                        <Button layoutX="210.0" layoutY="334.0" mnemonicParsing="false" text="Save file location" />
+                        <TextField fx:id="browseDecryptionFileLocationTextField1" layoutX="328.0" layoutY="332.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                        <Button layoutX="210.0" layoutY="385.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="373.0" text="Save" />
                      </children></AnchorPane>
             </content>
           </Tab>
             <Tab text="Export Keys">
               <content>
-                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <Button layoutX="107.0" layoutY="64.0" mnemonicParsing="false" text="Browse" />
+                        <TextField layoutX="186.0" layoutY="64.0" />
+                        <Button layoutX="127.0" layoutY="157.0" mnemonicParsing="false" text="Button" />
+                        <ComboBox layoutX="186.0" layoutY="111.0" prefWidth="150.0" />
+                        <Label layoutX="107.0" layoutY="115.0" text="Label" />
+                     </children></AnchorPane>
               </content>
             </Tab>
             <Tab text="Import keys">
@@ -49,9 +67,34 @@
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
               </content>
             </Tab>
-            <Tab text="View keyrings">
+            <Tab text="View certificates">
               <content>
-                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TableView layoutX="14.0" layoutY="44.0" prefHeight="514.0" prefWidth="772.0">
+                          <columns>
+                            <TableColumn prefWidth="75.0" text="C1" />
+                            <TableColumn prefWidth="75.0" text="C2" />
+                          </columns>
+                        </TableView>
+                     </children></AnchorPane>
+              </content>
+            </Tab>
+            <Tab text="Generate new keypair">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TextField layoutX="325.0" layoutY="115.0" prefHeight="25.0" prefWidth="224.0" />
+                        <Label layoutX="268.0" layoutY="119.0" text="Name" />
+                        <TextField layoutX="325.0" layoutY="179.0" prefHeight="25.0" prefWidth="219.0" />
+                        <Label layoutX="268.0" layoutY="183.0" text="Email" />
+                        <Label layoutX="248.0" layoutY="240.0" text="Password" />
+                        <PasswordField layoutX="325.0" layoutY="237.0" prefHeight="25.0" prefWidth="222.0" />
+                        <ComboBox layoutX="325.0" layoutY="291.0" prefHeight="25.0" prefWidth="225.0" />
+                        <Label layoutX="247.0" layoutY="295.0" text="Algorithm" />
+                        <Button layoutX="248.0" layoutY="353.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="305.0" text="Generate KeyPair for user" />
+                     </children>
+                  </AnchorPane>
               </content>
             </Tab>
         </tabs>
