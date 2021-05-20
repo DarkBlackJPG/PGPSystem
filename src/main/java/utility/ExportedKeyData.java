@@ -57,4 +57,16 @@ public class ExportedKeyData {
     public void setKeyID(long keyID) {
         this.keyID = keyID;
     }
+
+    @Override
+    public String toString() {
+        return "ExportedKeyData{" +
+                "isMasterKey=" + isMasterKey +
+                ", userName='" + userName + '\'' +
+                ", email='" + email + '\'' +
+                ", validFrom=" + validFrom +
+                ", validUntil=" + validUntil +
+                ", keyID=" + Long.toHexString(keyID) +
+                '}';
+    }
 }

@@ -17,8 +17,14 @@ public interface Keyring {
     void addSecretKey(PGPSecretKeyRing secretKey) throws IOException, PGPException;
     void addPublicKey(PGPPublicKeyRing publicKey) throws IOException, PGPException;
 
-    void addSecretKey(InputStream secretKey);
-    void addPublicKey(InputStream publicKey);
+    void addSecretKey(InputStream secretKey) throws IOException, PGPException;
+    void addPublicKey(InputStream publicKey) throws IOException, PGPException;
+
+    void makeKeyPairs(PGPKeyPair pgpKeyPair, String username, String email, String password) throws PGPException, IOException;
+
+    void importKeyPair(InputStream inputStream) throws IOException;
+    void exportPublicKey(long KeyId, OutputStream os) throws PGPException, IOException;
+    PGPPublicKeyRing makeKeyPairsTEST(PGPKeyPair pgpKeyPair, String username, String email, String password) throws PGPException, IOException;
 
     void saveKeys(String publicKeyFileLocation, String secretKeyFileLocation) throws IOException;
     void saveKeys(PGPPublicKeyRingCollection publicKeyRings, PGPSecretKeyRingCollection secretKeyRings, String publicKeyFileLocation, String secretKeyFileLocation) throws IOException;

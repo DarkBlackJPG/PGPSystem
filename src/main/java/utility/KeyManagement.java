@@ -25,6 +25,7 @@ import java.util.Iterator;
  * Sve klase u utility paketu bi trebalo da su singleton
  *
  */
+@Deprecated
 public class KeyManagement {
     private PGPSecretKeyRingCollection keyRingCollection;
     private PGPKeyRingGenerator keyRingGenerator;
@@ -54,6 +55,8 @@ public class KeyManagement {
     public PGPSecretKeyRing get() {
         return keyRingGenerator.generateSecretKeyRing();
     }
+
+
     public void generateKeyring(RSA.KeySizes keySize) throws Exception {
         activeUser = User.getUserInstance();
         RSA rsaUtility = RSA.RSA_GetUtility();
