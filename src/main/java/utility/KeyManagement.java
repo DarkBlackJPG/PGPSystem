@@ -51,7 +51,9 @@ public class KeyManagement {
     public PGPSecretKeyRingCollection getKeyRingCollection() {
         return keyRingCollection;
     }
-
+    public PGPSecretKeyRing get() {
+        return keyRingGenerator.generateSecretKeyRing();
+    }
     public void generateKeyring(RSA.KeySizes keySize) throws Exception {
         activeUser = User.getUserInstance();
         RSA rsaUtility = RSA.RSA_GetUtility();

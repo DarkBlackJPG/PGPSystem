@@ -5,6 +5,7 @@ import utility.RSA;
 import utility.User;
 
 import java.security.KeyPair;
+import java.util.ArrayList;
 
 public class RSA_test {
     public static void main(String[] args) {
@@ -16,9 +17,10 @@ public class RSA_test {
         try {
             KeyManagement keyManagement = new KeyManagement();
             keyManagement.generateKeyring(RSA.KeySizes.RSA1024);
-            keyManagement.saveKeyrings();
-            PGPSecretKey s = keyManagement.getAsymmetricSigningKey();
-            KeyManagement.exportSecretKey(s, "C:\\Users\\stefa\\OneDrive\\Desktop\\out.asc");
+            PGPSecretKeyRing s = keyManagement.get();
+            ArrayList<PGPSecretKeyRing> ss = new ArrayList<>();
+            ss.add(s);
+            PGPSecretKeyRingCollection sss = new PGPSecretKeyRingCollection(ss);
             System.out.println();
         } catch (Exception e) {
             e.printStackTrace();
