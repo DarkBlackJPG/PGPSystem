@@ -23,3 +23,7 @@
 hs_err_pid*
 *.pkr
 *.skr
+*.asc
+target/maven-archiver/pom.properties
+target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst

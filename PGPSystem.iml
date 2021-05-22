@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/target/generated-sources/annotations" isTestSource="false" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -30,5 +31,8 @@
     <orderEntry type="library" name="Maven: org.openjfx:javafx-media:win:12" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-swing:12" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-swing:win:12" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ant:ant:1.10.10" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ant:ant-launcher:1.10.10" level="project" />
+    <orderEntry type="library" name="Maven: log4j:log4j:1.2.17" level="project" />
   </component>
 </module>
