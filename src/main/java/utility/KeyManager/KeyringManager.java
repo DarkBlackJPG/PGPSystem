@@ -135,7 +135,7 @@ public class KeyringManager implements Keyring {
     }
 
     @Override
-    public void makeKeyPairs(PGPKeyPair pgpKeyPair, String username, String email, String password) throws PGPException, IOException {
+    public void makeKeyPairs(PGPKeyPair masterKey, PGPKeyPair subKey, String username, String email, String password) throws PGPException, IOException {
 
         PGPSignatureSubpacketGenerator signHashGen = new PGPSignatureSubpacketGenerator();
         signHashGen.setKeyFlags(false, KeyFlags.SIGN_DATA | KeyFlags.CERTIFY_OTHER);
@@ -154,20 +154,19 @@ public class KeyringManager implements Keyring {
 
         PGPKeyRingGenerator keyRingGenerator = new PGPKeyRingGenerator(
                 PGPSignature.DEFAULT_CERTIFICATION,
-                pgpKeyPair,
+                masterKey,
                 String.format("%s <%s>",
                         username,
                         email),
                 new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
                 signHashGen.generate(),
-                encHashGen.generate(),
+                null,
                 new BcPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1),
                 new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).build(password.toCharArray())
         );
-
+        keyRingGenerator.addSubKey(subKey, encHashGen.generate(), null);
         PGPSecretKeyRing secretKeys = keyRingGenerator.generateSecretKeyRing();
         PGPPublicKeyRing pgpPublicKeys = keyRingGenerator.generatePublicKeyRing();
-
         addPublicKey(pgpPublicKeys);
         addSecretKey(secretKeys);
 
@@ -230,12 +229,8 @@ public class KeyringManager implements Keyring {
 
     @Override
     public void exportPublicKey(long KeyId, OutputStream os) throws PGPException, IOException {
-        PGPPublicKey publicKey = publicKeyRings.getPublicKey(KeyId);
-        if (publicKey != null && publicKey.getKeyID() == KeyId) {
-            ArrayList<PGPPublicKey> keys = new ArrayList<>();
-            keys.add(publicKey);
-            PGPPublicKeyRing publicKeys = new PGPPublicKeyRing(keys);
-            exportPublicKey(publicKeys, os);
+        if (publicKeyRings.contains(KeyId)) {
+            exportPublicKey(publicKeyRings.getPublicKeyRing(KeyId), os);
         }
     }
 
@@ -354,7 +349,6 @@ public class KeyringManager implements Keyring {
         keyData.setKeyID(pgp.getKeyID());
         keyData.setMasterKey(false);
         keyData.setValidFrom(pgp.getCreationTime());
-
         keyData.setValidUntil(addSeconds(pgp.getCreationTime(), pgp.getValidSeconds()));
         return keyData;
     }
@@ -366,8 +360,8 @@ public class KeyringManager implements Keyring {
         ArrayList<ExportedKeyData> data = new ArrayList<>();
 
         publicKeys.forEachRemaining(pgpPublicKeys -> {
-            data.add(extractDataFromKey(pgpPublicKeys));
 
+            data.add(extractDataFromKey(pgpPublicKeys));
         });
         secretKeys.forEachRemaining(pgpSecretKeys -> {
             data.forEach(exportedKeyData -> {
@@ -420,11 +414,7 @@ public class KeyringManager implements Keyring {
     @Override
     public void exportSecretKey(long KeyID, OutputStream outputStream) throws PGPException, IOException, KeyNotFoundException {
         if (secretKeyRings.contains(KeyID)) {
-            PGPSecretKey pgpSecretKey = secretKeyRings.getSecretKey(KeyID);
-            ArrayList<PGPSecretKey> pgpSecretKeys = new ArrayList<>();
-            pgpSecretKeys.add(pgpSecretKey);
-            PGPSecretKeyRing pgpSecretKeyRing = new PGPSecretKeyRing(pgpSecretKeys);
-            exportSecretKey(pgpSecretKeyRing, outputStream);
+            exportSecretKey(secretKeyRings.getSecretKeyRing(KeyID), outputStream);
         } else {
             throw new KeyNotFoundException();
         }

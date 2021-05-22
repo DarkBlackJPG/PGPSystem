@@ -118,7 +118,7 @@ public interface Keyring {
      * @throws PGPException
      * @throws IOException
      */
-    void makeKeyPairs(PGPKeyPair pgpKeyPair, String username, String email, String password) throws PGPException, IOException;
+    void makeKeyPairs(PGPKeyPair masterKey, PGPKeyPair subKey, String username, String email, String password) throws PGPException, IOException;
 
     // Helper methods
 
