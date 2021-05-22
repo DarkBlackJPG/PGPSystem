@@ -35,9 +35,9 @@ public class TrippleDES {
     private byte[] key;
 
     /**
-     *  Returns a TrippleDES object that implements 3DES using specified key.
+     *  Returns a {@code TrippleDES} object that implements 3DES using specified key.
      *
-     * <p> A new TrippleDES object implementing the DESede/CBC/PKCS7Padding algorithm with
+     * <p> A new {@code TrippleDES} object implementing the DESede/CBC/PKCS7Padding algorithm with
      * 24 byte key (3 different keys) from the Bouncy Castel provider.
      *
      * @param keyString String key to be used for ciphering
@@ -97,7 +97,7 @@ public class TrippleDES {
     }
 
     /**
-     * For testing of TrippleDES implementation using a console
+     * For testing of {@code TrippleDES} class using a console
      * @param args not used
      */
     public static void main(String[] args) {

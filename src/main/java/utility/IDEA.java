@@ -14,7 +14,7 @@ import java.util.Scanner;
 
 /**
  * @author Sanja Samardzija 2017/0372
- * IDEA object that implements 3DES using specified key.
+ * {@code IDEA} object that implements 3DES using specified key.
  * Encrypts and decrypts data passed as byte array for said key.
  *
  */
@@ -33,9 +33,9 @@ public class IDEA {
     private byte[] key;
 
     /**
-     *  Returns a IDEA object that implements 3DES using specified key.
+     *  Returns a {@code IDEA} object that implements 3DES using specified key.
      *
-     * <p> A new IDEA object implementing the DESede/CBC/PKCS7Padding algorithm with
+     * <p> A new {@code IDEA} object implementing the DESede/CBC/PKCS7Padding algorithm with
      * 24 byte key (3 different keys) from the Bouncy Castel provider.
      *
      * @param keyString String key to be used for ciphering
@@ -96,7 +96,7 @@ public class IDEA {
     }
 
     /**
-     * For testing of IDEA implementation using a console
+     * For testing of {@code IDEA} class using a console
      * @param args not used
      */
     public static void main(String[] args) {
