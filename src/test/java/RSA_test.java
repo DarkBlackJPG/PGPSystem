@@ -31,11 +31,14 @@ public class RSA_test {
         try {
             file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
-            PGPKeyPair keyPair = RSA.RSA_GetUtility()
+            PGPKeyPair masterKey = RSA.RSA_GetUtility()
+                    .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                    .RSA_PGPKeyGenerator();
+            PGPKeyPair signingKey = RSA.RSA_GetUtility()
                     .RSA_SetKeySize(RSA.KeySizes.RSA4096)
                     .RSA_PGPKeyGenerator();
             KeyringManager keyringManager = new KeyringManager();
-            keyringManager.makeKeyPairs(keyPair, name, email, pass);
+            keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
 
             ArrayList<ExportedKeyData> exportedKeyData = keyringManager.generatePublicKeyList();
             keyringManager.exportPublicKey(exportedKeyData.get(0).getKeyID(), fileOutputStream);
@@ -62,11 +65,14 @@ public class RSA_test {
         try {
             file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
-            PGPKeyPair keyPair = RSA.RSA_GetUtility()
+            PGPKeyPair masterKey = RSA.RSA_GetUtility()
+                    .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                    .RSA_PGPKeyGenerator();
+            PGPKeyPair signingKey = RSA.RSA_GetUtility()
                     .RSA_SetKeySize(RSA.KeySizes.RSA4096)
                     .RSA_PGPKeyGenerator();
             KeyringManager keyringManager = new KeyringManager();
-            keyringManager.makeKeyPairs(keyPair, name, email, pass);
+            keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
 
             ArrayList<ExportedKeyData> exportedKeyData = keyringManager.generatePublicKeyList();
             keyringManager.exportSecretKey(exportedKeyData.get(0).getKeyID(), fileOutputStream);
@@ -139,11 +145,14 @@ public class RSA_test {
         try {
             file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
-            PGPKeyPair keyPair = RSA.RSA_GetUtility()
+            PGPKeyPair masterKey = RSA.RSA_GetUtility()
+                    .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                    .RSA_PGPKeyGenerator();
+            PGPKeyPair signingKey = RSA.RSA_GetUtility()
                     .RSA_SetKeySize(RSA.KeySizes.RSA4096)
                     .RSA_PGPKeyGenerator();
             KeyringManager keyringManager = new KeyringManager();
-            keyringManager.makeKeyPairs(keyPair, name, email, pass);
+            keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
 
             ArrayList<ExportedKeyData> exportedKeyData = keyringManager.generatePublicKeyList();
             for (ExportedKeyData element :
@@ -180,11 +189,14 @@ public class RSA_test {
         try {
             file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
-            PGPKeyPair keyPair = RSA.RSA_GetUtility()
+            PGPKeyPair masterKey = RSA.RSA_GetUtility()
+                    .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                    .RSA_PGPKeyGenerator();
+            PGPKeyPair signingKey = RSA.RSA_GetUtility()
                     .RSA_SetKeySize(RSA.KeySizes.RSA4096)
                     .RSA_PGPKeyGenerator();
             KeyringManager keyringManager = new KeyringManager();
-            keyringManager.makeKeyPairs(keyPair, name, email, pass);
+            keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
 
             ArrayList<ExportedKeyData> exportedKeyData = keyringManager.generatePublicKeyList();
             for (ExportedKeyData element :
@@ -221,11 +233,14 @@ public class RSA_test {
         try {
             file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
-            PGPKeyPair keyPair = RSA.RSA_GetUtility()
+            PGPKeyPair masterKey = RSA.RSA_GetUtility()
+                    .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                    .RSA_PGPKeyGenerator();
+            PGPKeyPair signingKey = RSA.RSA_GetUtility()
                     .RSA_SetKeySize(RSA.KeySizes.RSA4096)
                     .RSA_PGPKeyGenerator();
             KeyringManager keyringManager = new KeyringManager();
-            keyringManager.makeKeyPairs(keyPair, name, email, pass);
+            keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
 
             ArrayList<ExportedKeyData> exportedKeyData = keyringManager.generatePublicKeyList();
             for (ExportedKeyData element :
@@ -286,12 +301,14 @@ public class RSA_test {
 
     @Deprecated
     private static void exportImportSecretKey() throws Exception {
-        PGPKeyPair keyPair = RSA.RSA_GetUtility()
-                .RSA_SetKeySize(RSA.KeySizes.RSA1024)
+        PGPKeyPair masterKey = RSA.RSA_GetUtility()
+                .RSA_SetKeySize(RSA.KeySizes.RSA4096)
                 .RSA_PGPKeyGenerator();
-
+        PGPKeyPair signingKey = RSA.RSA_GetUtility()
+                .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                .RSA_PGPKeyGenerator();
         KeyringManager keyringManager = new KeyringManager();
-        keyringManager.makeKeyPairs(keyPair, name, email, pass);
+        keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
 
         File f = new File("C:\\Users\\stefa\\OneDrive\\Desktop\\test_secret.asc");
         f.createNewFile();
@@ -315,20 +332,20 @@ public class RSA_test {
     }
 
     private static void begin_test() {
-        System.out.println("TEST_exportPublic");
-        TEST_exportPublic();
-        System.out.println("TEST_exportSecret");
-        TEST_exportSecret();
-        System.out.println("TEST_importPublic");
-        TEST_importPublic();
-        System.out.println("TEST_importSecret");
-        TEST_importSecret();
-        System.out.println("TEST_deletePublic");
-        TEST_deletePublic();
-        System.out.println("TEST_deleteSecret_correctPWD");
-        TEST_deleteSecret_correctPWD();
-        System.out.println("TEST_deleteSecret_incorrectPWD");
-        TEST_deleteSecret_incorrectPWD();
+//        System.out.println("TEST_exportPublic");
+//        TEST_exportPublic();
+//        System.out.println("TEST_exportSecret");
+//        TEST_exportSecret();
+//        System.out.println("TEST_importPublic");
+//        TEST_importPublic();
+//        System.out.println("TEST_importSecret");
+//        TEST_importSecret();
+//        System.out.println("TEST_deletePublic");
+//        TEST_deletePublic();
+//        System.out.println("TEST_deleteSecret_correctPWD");
+//        TEST_deleteSecret_correctPWD();
+//        System.out.println("TEST_deleteSecret_incorrectPWD");
+//        TEST_deleteSecret_incorrectPWD();
     }
 
     public static void main(String[] args) {
