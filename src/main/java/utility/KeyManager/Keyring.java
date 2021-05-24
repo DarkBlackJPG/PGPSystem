@@ -49,7 +49,7 @@ public interface Keyring {
      * @throws PGPException
      * @throws IncorrectKeyException
      */
-    void removeSecretKey(long KeyId, String password) throws PGPException, IncorrectKeyException;
+    void removeSecretKey(long KeyId, String password) throws PGPException, IncorrectKeyException, KeyNotFoundException;
 
     /**
      * Ova metoda prvo radi ekstrakciju privatnog kljuca.
@@ -110,8 +110,8 @@ public interface Keyring {
      * Kada se to uradi, poziva se saveKeys koji samo pravi dva fajla i cuva u projektu
      * <p>
      * TODO Ekstrahovati nazive fajlova kao final staitc
-     *
-     * @param pgpKeyPair
+     * @param masterKey
+     * @param subKey
      * @param username
      * @param email
      * @param password
@@ -233,7 +233,7 @@ public interface Keyring {
      * @throws PGPException
      * @throws IOException
      */
-    void exportPublicKey(long KeyId, OutputStream os) throws PGPException, IOException;
+    void exportPublicKey(long KeyId, OutputStream os) throws PGPException, IOException, KeyNotFoundException;
 
     /**
      * TODO Isto fale neke provere sig
@@ -261,7 +261,7 @@ public interface Keyring {
     /**
      * Sejm shit kao i za public
      *
-     * @param KeyID
+     * @param key
      * @param outputStream
      * @throws PGPException
      * @throws IOException

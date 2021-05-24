@@ -30,9 +30,8 @@ public class KeyringManager implements Keyring {
 
     // Podrazumevano godinu dana
     final private long secondsToExpire = 31622400;
-
-    final static Logger logger = Logger.getLogger(KeyringManager.class);
-
+    public final static String privateKeyFile = "system_secretKeys.skr";
+    public final static String publicKeyFile = "system_publicKeys.pkr";
     /**
      * Ovo koristim da pretrazimo fajlsistem za trazeni fajl i da vratimo
      * putanju od korenog dir.
@@ -59,30 +58,31 @@ public class KeyringManager implements Keyring {
     }
 
     public KeyringManager() throws IOException, PGPException {
-        logger.info("Keymanager created");
         this.secretKeyRings = new PGPSecretKeyRingCollection(new ArrayList<>());
         this.publicKeyRings = new PGPPublicKeyRingCollection(new ArrayList<>());
 
         try {
             String secretKeyFile = scanForFile("system_secretKeys.skr");
-            String publicKeyFile = scanForFile("system_publicKeys.skr");
+            String publicKeyFile = scanForFile("system_publicKeys.pkr");
 
             // Ne znam ovo da ekstrahujem u metodu
 
             if (secretKeyFile != null) {
                 File secretKeyring = new File(secretKeyFile);
-                FileInputStream fis = new FileInputStream(secretKeyring);
-                secretKeyRings = new PGPSecretKeyRingCollection(fis, new JcaKeyFingerprintCalculator());
+                InputStream fis = new FileInputStream(secretKeyring);
+                fis = PGPUtil.getDecoderStream(fis);
+                secretKeyRings = new PGPSecretKeyRingCollection(fis, new BcKeyFingerprintCalculator());
             }
 
             if (publicKeyFile != null) {
                 File publicKeyring = new File(publicKeyFile);
-                FileInputStream fis = new FileInputStream(publicKeyring);
-                publicKeyRings = new PGPPublicKeyRingCollection(fis, new JcaKeyFingerprintCalculator());
+                InputStream fis = new FileInputStream(publicKeyring);
+                fis = PGPUtil.getDecoderStream(fis);
+                publicKeyRings = new PGPPublicKeyRingCollection(fis, new BcKeyFingerprintCalculator());
             }
 
         } catch (Exception e) {
-            logger.error("Keyring object encountered a fatal error!");
+            System.err.println("Keyring object encountered a fatal error!");
         }
     }
 
@@ -97,41 +97,6 @@ public class KeyringManager implements Keyring {
         publicKeys.add(newSecretKey.getPublicKey());
         PGPPublicKeyRing pgpPublicKeyRing = new PGPPublicKeyRing(publicKeys);
         addPublicKey(pgpPublicKeyRing);
-    }
-
-    public PGPPublicKeyRing makeKeyPairsTEST(PGPKeyPair pgpKeyPair, String username, String email, String password) throws PGPException, IOException {
-        PGPSignatureSubpacketGenerator signHashGen = new PGPSignatureSubpacketGenerator();
-        signHashGen.setKeyFlags(false, KeyFlags.SIGN_DATA | KeyFlags.CERTIFY_OTHER | KeyFlags.ENCRYPT_STORAGE | KeyFlags.ENCRYPT_COMMS);
-        signHashGen.setPreferredSymmetricAlgorithms(false, new int[]{
-                SymmetricKeyAlgorithmTags.TRIPLE_DES,
-                SymmetricKeyAlgorithmTags.IDEA
-        });
-        signHashGen.setPreferredHashAlgorithms(false, new int[]{
-                HashAlgorithmTags.SHA1
-        });
-        signHashGen.setKeyExpirationTime(false, secondsToExpire);
-        signHashGen.setPreferredCompressionAlgorithms(false, new int[]{CompressionAlgorithmTags.ZIP});
-
-        PGPSignatureSubpacketGenerator encHashGen = new PGPSignatureSubpacketGenerator();
-        encHashGen.setKeyFlags(false, KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE);
-
-        PGPKeyRingGenerator keyRingGenerator = new PGPKeyRingGenerator(
-                PGPSignature.DEFAULT_CERTIFICATION,
-                pgpKeyPair,
-                String.format("%s <%s>",
-                        username,
-                        email),
-                new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
-                signHashGen.generate(),
-                encHashGen.generate(),
-                new BcPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1),
-                new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).build(password.toCharArray())
-        );
-
-//        PGPSecretKeyRing secretKeys = keyRingGenerator.generateSecretKeyRing();
-        PGPPublicKeyRing pgpPublicKeys = keyRingGenerator.generatePublicKeyRing();
-
-        return pgpPublicKeys;
     }
 
     @Override
@@ -167,7 +132,6 @@ public class KeyringManager implements Keyring {
         keyRingGenerator.addSubKey(subKey, encHashGen.generate(), null);
         PGPSecretKeyRing secretKeys = keyRingGenerator.generateSecretKeyRing();
         PGPPublicKeyRing pgpPublicKeys = keyRingGenerator.generatePublicKeyRing();
-        addPublicKey(pgpPublicKeys);
         addSecretKey(secretKeys);
 
         // Cuva na root
