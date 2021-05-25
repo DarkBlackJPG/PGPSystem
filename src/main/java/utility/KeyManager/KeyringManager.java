@@ -133,6 +133,7 @@ public class KeyringManager implements Keyring {
         PGPSecretKeyRing secretKeys = keyRingGenerator.generateSecretKeyRing();
         PGPPublicKeyRing pgpPublicKeys = keyRingGenerator.generatePublicKeyRing();
         addSecretKey(secretKeys);
+        addPublicKey(pgpPublicKeys);
 
         // Cuva na root
         saveKeys("system_publicKeys.pkr", "system_secretKeys.skr");

@@ -17,6 +17,7 @@ class PGP_test {
     private static String fileToEncrypt = "EncryptionTest.txt";
     private static String fileToDecrypt = "EncryptionTest.txt.asc";
     private static String outputFileName = "123.txt";
+    private static String fileToSign = "EncryptionTest.txt";
 
 
     public static void main(String[] args) {
@@ -34,34 +35,48 @@ class PGP_test {
             KeyringManager keyringManager = new KeyringManager();
             keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
             PGPPublicKey publicKey = signingKey.getPublicKey();
+            System.out.println(publicKey.getKeyID());
             PGPPrivateKey privateKey = signingKey.getPrivateKey();
-
-            ///////////////////////////////////////////
+            System.out.println(privateKey.getKeyID());
+//
+//            ///////////////////////////////////////////
 //            pgp.encryptFile(fileToDecrypt,fileToEncrypt,new PGPPublicKey[]{publicKey},
-//                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, true);
+//                    SymmetricKeyAlgorithmTags.TRIPLE_DES, false, true);
 //            input = new FileInputStream(fileToDecrypt);
 //            System.out.println("Encrypted file:");
 //            System.out.println("===================================================");
 //            Streams.pipeAll(input, System.out);
 //            input.close();
-
-            /////////////////////////////////////////////////
-            pgp.decryptFile(fileToDecrypt, KeyringManager.privateKeyFile, pass, outputFileName);
-            System.out.println("Decrypted file:");
+//
+//            /////////////////////////////////////////////////
+//            pgp.decryptFile(fileToDecrypt, KeyringManager.privateKeyFile, pass, outputFileName);
+//            System.out.println("Decrypted file:");
+//            System.out.println("===================================================");
+//            try {
+//                input = new FileInputStream(fileToEncrypt);
+//            } catch (Exception e){
+//                input = new FileInputStream(fileToDecrypt);
+//            }
+//            Streams.pipeAll(input, System.out);
+//            input.close();
+//
+//            System.out.println();
+//            /////////////////////////////////////////////////
+            String signed = pgp.signFile(fileToSign, privateKey, publicKey, true, true);
+            System.out.println("Signed file:");
             System.out.println("===================================================");
-            try {
-                input = new FileInputStream(fileToEncrypt);
-            } catch (Exception e){
-                input = new FileInputStream(fileToDecrypt);
-            }
+            input = new FileInputStream(signed);
             Streams.pipeAll(input, System.out);
             input.close();
 
-
-            System.out.println();
-            System.out.println("Signed file:");
+            System.out.println("Verify file:");
             System.out.println("===================================================");
-
+//            if(pgp.verifyFile(signed, KeyringManager.publicKeyFile)){
+            if(pgp.verifyFile(fileToDecrypt, KeyringManager.publicKeyFile)){
+                System.out.println("Verified");
+            } else {
+                System.out.println("Not verified");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
