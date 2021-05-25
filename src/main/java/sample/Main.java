@@ -18,7 +18,7 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample.fxml"));
         primaryStage.setTitle("PGP");
         primaryStage.setScene(new Scene(root));
-        primaryStage.getIcons().add(new Image("logo.svg"));
+        primaryStage.getIcons().add(new Image("logo.png"));
         primaryStage.setResizable(false);
         mainReference = this;
 
