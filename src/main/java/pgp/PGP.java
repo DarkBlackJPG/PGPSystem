@@ -93,7 +93,7 @@ public class PGP
         for(Iterator<PGPEncryptedData> it = encryptedData.iterator();
             privateKey == null && it.hasNext();) {
             // Encrypted data with key data for the public key used to encrypt it
-//            if(it.next() instanceof PGPPublicKeyEncryptedData){
+//            if((Object)it.next() instanceof PGPPublicKeyEncryptedData){
                 publicKeyEncryptedData = (PGPPublicKeyEncryptedData)it.next();
                 // until the private key found or reached the end of the stream
                 privateKey = PGPutil.findPrivateKey(secretKeyRingCollection,
@@ -248,11 +248,8 @@ public class PGP
             objectFactory = new PGPObjectFactory(((PGPCompressedData) object).getDataStream(),
                     new JcaKeyFingerprintCalculator());
             object = objectFactory.nextObject();
-        } //else if(object instanceof PGPLiteralData) {
-//            objectFactory = new PGPObjectFactory(((PGPLiteralData) object).getDataStream(),
-//                new JcaKeyFingerprintCalculator());
-//            object = objectFactory.nextObject();
-//        }
+        }
+
         PGPOnePassSignatureList onePassSignatureList = (PGPOnePassSignatureList) object;
         PGPOnePassSignature onePassSignature = onePassSignatureList.get(0);
 
@@ -289,6 +286,19 @@ public class PGP
         }
     }
 
+    /**
+     * Sign file with provided private key
+     *
+     * @param fileToSign name of the signed {@link File} to sign
+     * @param privateKey {@link PGPPrivateKey} used to sign the file
+     * @param publicKey {@link PGPPublicKey} used to sign the file
+     * @param radix64 if true encrypted data will be encoded with {@link ArmoredOutputStream}
+     * @param compress  if true data will be compressed before encryption using
+     *                      {@code ZIP} algorithm {@link CompressionAlgorithmTags}
+     * @return {@code String } name of signed file
+     * @throws IOException
+     * @throws PGPException
+     */
     public static String signFile(
             String fileToSign,
             PGPPrivateKey privateKey,
@@ -371,4 +381,13 @@ public class PGP
         return fileName;
     }
 
+    public static String signAndEncrypt(){
+        String fileName=null;
+        return fileName;
+    }
+
+    public static String decryptAndVerify(){
+        String fileName=null;
+        return fileName;
+    }
 }
