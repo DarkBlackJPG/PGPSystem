@@ -3,6 +3,7 @@ package sample;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -28,6 +29,13 @@ import java.util.regex.Pattern;
 
 
 public class Controller {
+    public ComboBox exportKeyChoiceCombobox;
+    public ComboBox newKeyPairAlgorithm; // ne trebaju kljucevi
+    public ChoiceBox encryptionAlgorithmsChoiceBox; // Ne trebaju kljucevi
+    public ChoiceBox signChoiceBox;
+    public TableView certificateTableTableView;
+    public TableView publicKeyEncryptionChoiceTableView;
+
     public Button browseDecryptionFileChooserTriggerButton;
     public TextField browseDecryptionFileLocationTextField;
     public TextArea displayDecriptionAndVerificationOutputTextField;
@@ -38,32 +46,26 @@ public class Controller {
     public Button browseExportKeysFileButton;
     public TextField exportFileLocationTextField;
     public Button executeExportKeyButton;
-    public ComboBox exportKeyChoiceCombobox;
     public Button browseImportSecretKeyButton;
     public TextField pathToImportKeyFileTextField;
     public Button executeImportSecretKeyButton;
     public Button browseImportPublicKeyButton;
     public Button executeImportPublicKeyButton;
     public TextField publicKeyFIleLocationTextField;
-    public TableView certificateTableTableView;
     public TextField newKeyPairName;
     public TextField newKeyPairEmail;
     public PasswordField newKeyPairPassword;
-    public ComboBox newKeyPairAlgorithm;
     public Button generateNewKeyPairButton;
     public TextField browseFileLocationTextField;
     public CheckBox useEncryptionCheckBox;
-    public ChoiceBox encryptionAlgorithmsChoiceBox;
     public CheckBox signCheckBox;
-    public ChoiceBox signChoiceBox;
     public CheckBox compressionCheckBox;
     public CheckBox base64ConversionCheckBox;
     public Button sendButton;
     public Button browseFileChooserTriggerButton;
-    public TableView publicKeyEncryptionChoiceTableView;
     private List<String> symmetricAlgorithms = new ArrayList<>();
     private List<String> asymmetricAlgorithms = new ArrayList<>();
-    private ObservableList<ExportedKeyData> keys = FXCollections.observableArrayList();
+    private ObservableList<ExportedKeyData> allKeys = FXCollections.observableArrayList();
 
     /**
      * TODO [INTEGRACIJA] Izbrisati definiciju enuma, korisiti vec implementiranu u RSA.java klasi
@@ -129,6 +131,7 @@ public class Controller {
         alert.setHeaderText(header);
         alert.setContentText(text);
         alert.showAndWait();
+
     }
 
     /**
@@ -365,6 +368,20 @@ public class Controller {
     }
 
     /**
+     * Ovo je pomocna metoda za dodavanje ExportedKeyData u "kolekciju" iliti observable listu svih kljuceva
+     * u sistemu. Odvojeno je ovako zbog potencijalne provere postojanja istog kl;jjuca
+     *
+     * @param data
+     */
+    private void addKeyToAllKeys(ExportedKeyData data) {
+        // TODO [INTEGRACIJA] Da li treba proveravati da postoji kljuc sa istim parametrima???
+
+        // Provera
+
+        allKeys.add(data);
+    }
+
+    /**
      * Ovo je inicijalizovanje pogled.
      * Izvrsava se pre svaceg, automatski se poziva.
      *
@@ -375,6 +392,26 @@ public class Controller {
         encryptionAlgorithmsChoiceBox.setItems(FXCollections.observableList(symmetricAlgorithms));
         newKeyPairAlgorithm.setItems(FXCollections.observableList(asymmetricAlgorithms));
 
+        // Koristimo observable list da automatski azuriramo podatke kada se desi neka promena
+        // TODO [INTEGRACIJA] Testirati ovaj Listener
+        // Ovo je implementacija Observer patterna, tu registrujemo sve koji posmatraju promenu i azuriramo podatke
+        allKeys.addListener((ListChangeListener<? super ExportedKeyData>) change -> {
+            certificateTableTableView.getItems().clear();
+            publicKeyEncryptionChoiceTableView.getItems().clear();
+            signChoiceBox.getItems().clear();
+            exportKeyChoiceCombobox.getItems().clear();
+            allKeys.forEach(exportedKeyData -> {
+                if (exportedKeyData.getIsMasterKey()) {
+                    signChoiceBox.getItems().add(parseExportedKeyDataToChoiceBoxReadableText(exportedKeyData));
+                    exportKeyChoiceCombobox.getItems().add(parseExportedKeyDataToChoiceBoxReadableText(exportedKeyData));
+                }
+                EncryptionWrapper wrapper = new EncryptionWrapper();
+                wrapper.setElement(exportedKeyData);
+                wrapper.setSelected(false);
+                publicKeyEncryptionChoiceTableView.getItems().add(wrapper);
+                certificateTableTableView.getItems().add(exportedKeyData);
+            });
+        });
 
         /**
          * TODO [INTEGRACIJA] Tu treba da stoji logika za dohvatanje svih kljuceva u sistemu radi ispisa, za sad samo dummy
@@ -385,13 +422,13 @@ public class Controller {
         dummyData.setKeyID(123123123);
         dummyData.setValidFrom(new Date());
         dummyData.setValidUntil(new Date(2022, 12, 12));
-        keys.add(dummyData);
+        dummyData.setMasterKey(true);
+       addKeyToAllKeys(dummyData);
 
         // Referencirati ovu metodu
         createCertificatesListView();
 
         // TODO [INTEGRACIJA] Dodati sve kljuceve u for-petlji --- Mozda ima addALL?
-        certificateTableTableView.getItems().add(dummyData);
 
         // Referencirati metodu
         initializePublicKeyEncryptionKeys();
@@ -400,10 +437,11 @@ public class Controller {
         /**
          * Wrapper objekat je da bi checkbox radio!!!
          */
-        EncryptionWrapper ew = new EncryptionWrapper();
-        ew.setSelected(false);
-        ew.setElement(dummyData);
-        publicKeyEncryptionChoiceTableView.getItems().add(ew);
+        // Ne treba ovaj deo, dodajemo sve u allKeys i onda on sve to iscitava
+//        EncryptionWrapper ew = new EncryptionWrapper();
+//        ew.setSelected(false);
+//        ew.setElement(dummyData);
+//        publicKeyEncryptionChoiceTableView.getItems().add(ew);
 
 
         // TODO [INTEGRACIJA] Tu treba popuniti takodje i ostale choiceBox-ove gde mozemo da biramo kljuceve
