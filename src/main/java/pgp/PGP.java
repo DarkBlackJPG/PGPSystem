@@ -240,7 +240,7 @@ public class PGP
     public static boolean verifyFile(String fileToVerify,
                                   String publicKeyFileName) throws IOException, PGPException {
 
-        InputStream fileInputStream = PGPUtil.getDecoderStream(new FileInputStream(fileToVerify));
+        InputStream fileInputStream = PGPUtil.getDecoderStream(new BufferedInputStream(new FileInputStream(fileToVerify)));
 
         PGPObjectFactory objectFactory = new PGPObjectFactory(fileInputStream, new JcaKeyFingerprintCalculator());
         Object object = objectFactory.nextObject();

@@ -61,9 +61,9 @@ public class SignedFileProcessor
 
         JcaPGPObjectFactory            pgpFact = new JcaPGPObjectFactory(in);
 
-        PGPCompressedData           c1 = (PGPCompressedData)pgpFact.nextObject();
-
-        pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
+//        PGPCompressedData           c1 = (PGPCompressedData)pgpFact.nextObject();
+//
+//        pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
 
         PGPOnePassSignatureList     p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
 
