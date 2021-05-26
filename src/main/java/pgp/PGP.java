@@ -24,7 +24,9 @@ public class PGP
 {
     private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
     private static final int SIGNATURE_TYPE = PGPSignature.BINARY_DOCUMENT;
+    private static final char FILE_TYPE = PGPLiteralData.BINARY;
     private static final int HASH_TYPE = HashAlgorithmTags.SHA1;
+    private static final int ZIP_ALGORITHM = PGPCompressedData.ZIP;
     private static final Logger logger = Logger.getLogger(PGP.class);
     private static PGP pgp;
 
@@ -251,7 +253,7 @@ public class PGP
 //                new JcaKeyFingerprintCalculator());
 //            object = objectFactory.nextObject();
 //        }
-        PGPOnePassSignatureList onePassSignatureList = (PGPOnePassSignatureList) objectFactory.nextObject();
+        PGPOnePassSignatureList onePassSignatureList = (PGPOnePassSignatureList) object;
         PGPOnePassSignature onePassSignature = onePassSignatureList.get(0);
 
         PGPLiteralData literalData = (PGPLiteralData)objectFactory.nextObject();
@@ -302,7 +304,7 @@ public class PGP
             logger.info("convert to radix64");
         } else {
             fileName += ".bpg";
-            outputStream = new BufferedOutputStream(new FileOutputStream(fileName));
+            outputStream = new FileOutputStream(fileName);
         }
 
 //        PGPPrivateKey privateKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder()
@@ -322,33 +324,47 @@ public class PGP
             signatureGenerator.setHashedSubpackets(signatureSubpacketGenerator.generate());
         }
         PGPCompressedDataGenerator compressedDataGenerator = null;
+        OutputStream compressedOutputStream = null;
         if(compress) {
-            compressedDataGenerator = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-            outputStream = compressedDataGenerator.open(outputStream);
+            compressedDataGenerator = new PGPCompressedDataGenerator(ZIP_ALGORITHM);
+            compressedOutputStream =  new BCPGOutputStream(compressedDataGenerator.open(outputStream));
+            // one pass header associated with the current signature
+            signatureGenerator.generateOnePassVersion(false).encode(compressedOutputStream);
             logger.info("file compressed");
+        } else {
+            // one pass header associated with the current signature
+            signatureGenerator.generateOnePassVersion(false).encode(outputStream);
         }
         // one pass header associated with the current signature
-        signatureGenerator.generateOnePassVersion(false).encode(outputStream);
 
-        File file = new File(fileName);
+        File file = new File(fileToSign);
         PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
-        OutputStream signedOutputStream = literalDataGenerator.open(outputStream,
-                                                                PGPLiteralData.BINARY,
-                                                                file);
+        OutputStream signedOutputStream;
+        if(compress){
+            signedOutputStream = literalDataGenerator.open(compressedOutputStream,
+                    FILE_TYPE,
+                    file);
+        } else {
+            signedOutputStream = literalDataGenerator.open(outputStream,
+                    FILE_TYPE,
+                    file);
+        }
         FileInputStream fileInputStream = new FileInputStream(file);
         byte[] fileBytes = fileInputStream.readAllBytes();
+        System.out.println(new String(fileBytes));
+
         signedOutputStream.write(fileBytes);
         signatureGenerator.update(fileBytes);
 
-        signedOutputStream.flush();
-        signedOutputStream.close();
         literalDataGenerator.close();
 
-        signatureGenerator.generate().encode(outputStream);
-
         if(compress) {
+            signatureGenerator.generate().encode(compressedOutputStream);
             compressedDataGenerator.close();
+        } else {
+            signatureGenerator.generate().encode(outputStream);
         }
+
         outputStream.flush();
         outputStream.close();
         logger.info("file signed");
