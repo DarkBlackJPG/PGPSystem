@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Accordion?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
    <children>
       <TabPane prefHeight="600.0" prefWidth="800.0" tabClosingPolicy="UNAVAILABLE">
@@ -10,18 +27,16 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                         <Button fx:id="browseFileChooserTriggerButton" layoutX="198.0" layoutY="105.0"
-                                 mnemonicParsing="false" onAction="#browseFiileAction" prefHeight="25.0"
-                                 prefWidth="82.0" text="Browse"/>
-                        <TextField fx:id="browseFileLocationTextField" layoutX="318.0" layoutY="105.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
-                        <CheckBox fx:id="useEncryptionCheckBox" layoutX="202.0" layoutY="170.0" mnemonicParsing="false" onAction="#useEncryptionChangeAction" selected="true" text="Use encryption" />
-                        <ChoiceBox fx:id="encryptionAlgorithmsChoiceBox" layoutX="322.0" layoutY="167.0" prefHeight="25.0" prefWidth="256.0" />
-                        <CheckBox fx:id="signCheckBox" layoutX="203.0" layoutY="237.0" mnemonicParsing="false" onAction="#signChangeAction" selected="true" text="Sign" />
-                        <ChoiceBox fx:id="signChoiceBox" layoutX="322.0" layoutY="233.0" prefHeight="25.0" prefWidth="256.0" />
-                        <CheckBox fx:id="compressionCheckBox" layoutX="202.0" layoutY="294.0" mnemonicParsing="false" onAction="#compressionChangeAction" selected="true" text="Use compression" />
-                        <CheckBox fx:id="base64ConversionCheckBox" layoutX="445.0" layoutY="294.0" mnemonicParsing="false" onAction="#base64ConversionChangeAction" selected="true" text="Base - 64 conversion" />
-                         <Button fx:id="sendButton" layoutX="201.0" layoutY="344.0" mnemonicParsing="false"
-                                 onAction="#sendAction" prefHeight="25.0" prefWidth="387.0" text="Send"/>
+                         <Button fx:id="browseFileChooserTriggerButton" layoutX="28.0" layoutY="138.0" mnemonicParsing="false" onAction="#browseFiileAction" prefHeight="25.0" prefWidth="82.0" text="Browse" />
+                        <TextField fx:id="browseFileLocationTextField" layoutX="148.0" layoutY="138.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                        <CheckBox fx:id="useEncryptionCheckBox" layoutX="29.0" layoutY="203.0" mnemonicParsing="false" onAction="#useEncryptionChangeAction" selected="true" text="Use encryption" />
+                        <ChoiceBox fx:id="encryptionAlgorithmsChoiceBox" layoutX="149.0" layoutY="200.0" prefHeight="25.0" prefWidth="256.0" />
+                        <CheckBox fx:id="signCheckBox" layoutX="30.0" layoutY="318.0" mnemonicParsing="false" onAction="#signChangeAction" selected="true" text="Sign" />
+                        <ChoiceBox fx:id="signChoiceBox" layoutX="149.0" layoutY="314.0" prefHeight="25.0" prefWidth="256.0" />
+                        <CheckBox fx:id="compressionCheckBox" layoutX="30.0" layoutY="370.0" mnemonicParsing="false" onAction="#compressionChangeAction" selected="true" text="Use compression" />
+                        <CheckBox fx:id="base64ConversionCheckBox" layoutX="273.0" layoutY="370.0" mnemonicParsing="false" onAction="#base64ConversionChangeAction" selected="true" text="Base - 64 conversion" />
+                         <Button fx:id="sendButton" layoutX="30.0" layoutY="409.0" mnemonicParsing="false" onAction="#sendAction" prefHeight="25.0" prefWidth="374.0" text="Send" />
+                        <TableView fx:id="publicKeyEncryptionChoiceTableView" layoutX="427.0" layoutY="138.0" prefHeight="296.0" prefWidth="359.0" />
                      </children>
                   </AnchorPane>
             </content>
@@ -30,23 +45,13 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                   <children>
-                      <Button fx:id="browseDecryptionFileChooserTriggerButton" layoutX="208.0" layoutY="70.0"
-                              mnemonicParsing="false" onAction="#browseDecryptionFIleAction" prefHeight="25.0"
-                              prefWidth="98.0" text="Browse"/>
-                      <TextField fx:id="browseDecryptionFileLocationTextField" layoutX="328.0" layoutY="70.0"
-                                 prefHeight="25.0" prefWidth="258.0" promptText="Path to file"/>
-                      <Button fx:id="decryptAndVerifyButton" layoutX="210.0" layoutY="121.0" mnemonicParsing="false"
-                              onAction="#startDecriptionAndVerificationButton" prefHeight="25.0" prefWidth="377.0"
-                              text="Decrypt and verify"/>
-                      <TextArea fx:id="displayDecriptionAndVerificationOutputTextField" disable="true" layoutX="208.0"
-                                layoutY="156.0" prefHeight="142.0" prefWidth="381.0"/>
-                      <Button fx:id="saveDecryptionFileLocationButton" layoutX="210.0" layoutY="334.0"
-                              mnemonicParsing="false" onAction="#chooseDecryptionFileLocation"
-                              text="Save file location"/>
-                      <TextField fx:id="decryptionFileLocationTextField" layoutX="328.0" layoutY="334.0"
-                                 prefHeight="25.0" prefWidth="258.0" promptText="Path to file"/>
-                      <Button fx:id="saveDecryptionFileButton" layoutX="210.0" layoutY="385.0" mnemonicParsing="false"
-                              onAction="#saveDecryptedFIle" prefHeight="25.0" prefWidth="373.0" text="Save"/>
+                      <Button fx:id="browseDecryptionFileChooserTriggerButton" layoutX="208.0" layoutY="70.0" mnemonicParsing="false" onAction="#browseDecryptionFileAction" prefHeight="25.0" prefWidth="98.0" text="Browse" />
+                      <TextField fx:id="browseDecryptionFileLocationTextField" layoutX="328.0" layoutY="70.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                      <Button fx:id="decryptAndVerifyButton" layoutX="210.0" layoutY="121.0" mnemonicParsing="false" onAction="#startDecriptionAndVerificationButton" prefHeight="25.0" prefWidth="377.0" text="Decrypt and verify" />
+                      <TextArea fx:id="displayDecriptionAndVerificationOutputTextField" disable="true" layoutX="208.0" layoutY="156.0" prefHeight="142.0" prefWidth="381.0" />
+                      <Button fx:id="saveDecryptionFileLocationButton" layoutX="210.0" layoutY="334.0" mnemonicParsing="false" onAction="#chooseDecryptionFileLocation" text="Save file location" />
+                      <TextField fx:id="decryptionFileLocationTextField" layoutX="328.0" layoutY="334.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                      <Button fx:id="saveDecryptionFileButton" layoutX="210.0" layoutY="385.0" mnemonicParsing="false" onAction="#saveDecryptedFIle" prefHeight="25.0" prefWidth="373.0" text="Save" />
                   </children></AnchorPane>
             </content>
           </Tab>
@@ -54,16 +59,11 @@
               <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                     <children>
-                        <Button fx:id="browseExportKeysFileButton" layoutX="240.0" layoutY="228.0"
-                                mnemonicParsing="false" onAction="#chooseExportKeysFileLocation" text="Browse"/>
-                        <TextField fx:id="exportFileLocationTextField" layoutX="319.0" layoutY="228.0" prefHeight="25.0"
-                                   prefWidth="254.0" promptText="File to export to"/>
-                        <Button fx:id="executeExportKeyButton" layoutX="242.0" layoutY="319.0" mnemonicParsing="false"
-                                onAction="#executeExportKey" prefHeight="25.0" prefWidth="332.0" text="Export"/>
-                        <ComboBox fx:id="exportKeyChoiceCombobox" layoutX="319.0" layoutY="275.0"
-                                  onAction="#keyChoiceComboboxAction" prefHeight="25.0" prefWidth="258.0"
-                                  promptText="Choose key"/>
-                        <Label layoutX="224.0" layoutY="279.0" text="Key to export"/>
+                        <Button fx:id="browseExportKeysFileButton" layoutX="240.0" layoutY="228.0" mnemonicParsing="false" onAction="#chooseExportKeysFileLocation" text="Browse" />
+                        <TextField fx:id="exportFileLocationTextField" layoutX="319.0" layoutY="228.0" prefHeight="25.0" prefWidth="254.0" promptText="File to export to" />
+                        <Button fx:id="executeExportKeyButton" layoutX="242.0" layoutY="319.0" mnemonicParsing="false" onAction="#executeExportKey" prefHeight="25.0" prefWidth="332.0" text="Export" />
+                        <ComboBox fx:id="exportKeyChoiceCombobox" layoutX="319.0" layoutY="275.0" onAction="#keyChoiceComboboxAction" prefHeight="25.0" prefWidth="258.0" promptText="Choose key" />
+                        <Label layoutX="224.0" layoutY="279.0" text="Key to export" />
                     </children></AnchorPane>
               </content>
             </Tab>
@@ -75,38 +75,22 @@
                                 <panes>
                                     <TitledPane animated="false" text="Import backup secret key">
                                         <content>
-                                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0"
-                                                        prefWidth="200.0">
+                                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                 <children>
-                                                    <Button fx:id="browseImportSecretKeyButton" layoutX="222.0"
-                                                            layoutY="217.0" mnemonicParsing="false"
-                                                            onAction="#browseImportSecretKey" text="Browse"/>
-                                                    <TextField fx:id="pathToImportKeyFileTextField" layoutX="301.0"
-                                                               layoutY="217.0" prefHeight="25.0" prefWidth="244.0"
-                                                               promptText="Path to file"/>
-                                                    <Button fx:id="executeImportSecretKeyButton" layoutX="222.0"
-                                                            layoutY="259.0" mnemonicParsing="false"
-                                                            onAction="#executeImportSecretKey" prefHeight="25.0"
-                                                            prefWidth="322.0" text="Import"/>
+                                                    <Button fx:id="browseImportSecretKeyButton" layoutX="222.0" layoutY="217.0" mnemonicParsing="false" onAction="#browseImportSecretKey" text="Browse" />
+                                                    <TextField fx:id="pathToImportKeyFileTextField" layoutX="301.0" layoutY="217.0" prefHeight="25.0" prefWidth="244.0" promptText="Path to file" />
+                                                    <Button fx:id="executeImportSecretKeyButton" layoutX="222.0" layoutY="259.0" mnemonicParsing="false" onAction="#executeImportSecretKey" prefHeight="25.0" prefWidth="322.0" text="Import" />
                                                 </children>
                                             </AnchorPane>
                                         </content>
                                     </TitledPane>
                                     <TitledPane animated="false" text="Import public key">
                                         <content>
-                                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0"
-                                                        prefWidth="200.0">
+                                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                 <children>
-                                                    <Button fx:id="browseImportPublicKeyButton" layoutX="230.0"
-                                                            layoutY="216.0" mnemonicParsing="false"
-                                                            onAction="#browseImportPublicKey" text="Browse"/>
-                                                    <Button fx:id="executeImportPublicKeyButton" layoutX="232.0"
-                                                            layoutY="260.0" mnemonicParsing="false"
-                                                            onAction="#executeImportPublicKey" prefHeight="25.0"
-                                                            prefWidth="305.0" text="Import"/>
-                                                    <TextField fx:id="publicKeyFIleLocationTextField" layoutX="307.0"
-                                                               layoutY="216.0" prefHeight="25.0" prefWidth="228.0"
-                                                               promptText="Public key import file location"/>
+                                                    <Button fx:id="browseImportPublicKeyButton" layoutX="230.0" layoutY="216.0" mnemonicParsing="false" onAction="#browseImportPublicKey" text="Browse" />
+                                                    <Button fx:id="executeImportPublicKeyButton" layoutX="232.0" layoutY="260.0" mnemonicParsing="false" onAction="#executeImportPublicKey" prefHeight="25.0" prefWidth="305.0" text="Import" />
+                                                    <TextField fx:id="publicKeyFIleLocationTextField" layoutX="307.0" layoutY="216.0" prefHeight="25.0" prefWidth="228.0" promptText="Public key import file location" />
                                                 </children>
                                             </AnchorPane>
                                         </content>
@@ -121,18 +105,14 @@
               <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                     <children>
-                        <TableView fx:id="certificateTableTableView" layoutX="14.0" layoutY="14.0" prefHeight="549.0"
-                                   prefWidth="778.0">
+                        <TableView fx:id="certificateTableTableView" layoutX="14.0" layoutY="14.0" prefHeight="549.0" prefWidth="778.0">
                             <contextMenu>
                                 <ContextMenu>
                                     <items>
-                                        <MenuItem mnemonicParsing="false" onAction="#contextMenuExportKey"
-                                                  text="Export key"/>
-                                        <MenuItem mnemonicParsing="false" onAction="#contextMenuDeleteKey"
-                                                  text="Delete key"/>
-                                        <SeparatorMenuItem mnemonicParsing="false"/>
-                                        <MenuItem mnemonicParsing="false" onAction="#contextMenuBackupKey"
-                                                  text="Backup master key"/>
+                                        <MenuItem mnemonicParsing="false" onAction="#contextMenuExportKey" text="Export key" />
+                                        <MenuItem mnemonicParsing="false" onAction="#contextMenuDeleteKey" text="Delete key" />
+                                        <SeparatorMenuItem mnemonicParsing="false" />
+                                        <MenuItem mnemonicParsing="false" onAction="#contextMenuBackupKey" text="Backup master key" />
                                     </items>
                                 </ContextMenu>
                             </contextMenu>
@@ -144,21 +124,15 @@
               <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                     <children>
-                        <TextField fx:id="newKeyPairName" layoutX="325.0" layoutY="115.0" prefHeight="25.0"
-                                   prefWidth="224.0"/>
-                        <Label layoutX="268.0" layoutY="119.0" text="Name"/>
-                        <TextField fx:id="newKeyPairEmail" layoutX="325.0" layoutY="179.0" prefHeight="25.0"
-                                   prefWidth="224.0"/>
-                        <Label layoutX="268.0" layoutY="183.0" text="Email"/>
-                        <Label layoutX="248.0" layoutY="240.0" text="Password"/>
-                        <PasswordField fx:id="newKeyPairPassword" layoutX="325.0" layoutY="237.0" prefHeight="25.0"
-                                       prefWidth="222.0"/>
-                        <ComboBox fx:id="newKeyPairAlgorithm" layoutX="325.0" layoutY="291.0" prefHeight="25.0"
-                                  prefWidth="225.0" promptText="Choose public key algorithm"/>
-                        <Label layoutX="247.0" layoutY="295.0" text="Algorithm"/>
-                        <Button fx:id="generateNewKeyPairButton" layoutX="248.0" layoutY="353.0" mnemonicParsing="false"
-                                onAction="#generateNewKeyPairButton" prefHeight="25.0" prefWidth="305.0"
-                                text="Generate KeyPair for user"/>
+                        <TextField fx:id="newKeyPairName" layoutX="325.0" layoutY="115.0" prefHeight="25.0" prefWidth="224.0" />
+                        <Label layoutX="268.0" layoutY="119.0" text="Name" />
+                        <TextField fx:id="newKeyPairEmail" layoutX="325.0" layoutY="179.0" prefHeight="25.0" prefWidth="224.0" />
+                        <Label layoutX="268.0" layoutY="183.0" text="Email" />
+                        <Label layoutX="248.0" layoutY="240.0" text="Password" />
+                        <PasswordField fx:id="newKeyPairPassword" layoutX="325.0" layoutY="237.0" prefHeight="25.0" prefWidth="222.0" />
+                        <ComboBox fx:id="newKeyPairAlgorithm" layoutX="325.0" layoutY="291.0" prefHeight="25.0" prefWidth="225.0" promptText="Choose public key algorithm" />
+                        <Label layoutX="247.0" layoutY="295.0" text="Algorithm" />
+                        <Button fx:id="generateNewKeyPairButton" layoutX="248.0" layoutY="353.0" mnemonicParsing="false" onAction="#generateNewKeyPairButton" prefHeight="25.0" prefWidth="305.0" text="Generate KeyPair for user" />
                     </children>
                   </AnchorPane>
               </content>

@@ -1,17 +1,20 @@
 package sample;
 
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,21 +60,70 @@ public class Controller {
     public CheckBox base64ConversionCheckBox;
     public Button sendButton;
     public Button browseFileChooserTriggerButton;
+    public TableView publicKeyEncryptionChoiceTableView;
     private List<String> symmetricAlgorithms = new ArrayList<>();
     private List<String> asymmetricAlgorithms = new ArrayList<>();
     private ObservableList<ExportedKeyData> keys = FXCollections.observableArrayList();
 
+    /**
+     * TODO [INTEGRACIJA] Izbrisati definiciju enuma, korisiti vec implementiranu u RSA.java klasi
+     * <p>
+     * Mock za vec implementiranu klasu
+     */
+    public static enum KeySizes {
+        RSA1024(1024),
+        RSA2048(2048),
+        RSA4096(4096);
+
+
+        private final int keySize;
+
+        KeySizes(int keySize) {
+            this.keySize = keySize;
+        }
+
+        public int getKeySize() {
+            return this.keySize;
+        }
+    }
+
+    // Sluzi za parsiranje stringa prilikom odabira iz choice box-a za novi tajni kljuc
+    private HashMap<String, KeySizes> rsaKeySizesHashMap = new HashMap<>();
+
+    // TODO [INTEGRACIJA] napraviti slican hash za simetricne algoritme, takodje dodati u inicijalizaciju
+    // ---------| CODE GOES HERE
+    // ...
+    // ---------|
+
+
+    // Inicijalizacija neophodnih struktura podataka za ispis u FX komponente
     {
+        String rsa1024 = "RSA 1024";
+        String rsa2048 = "RSA 2048";
+        String rsa4096 = "RSA 4096";
+
         symmetricAlgorithms.add("Triple DES");
         symmetricAlgorithms.add("IDEA");
 
-        asymmetricAlgorithms.add("RSA 1024");
-        asymmetricAlgorithms.add("RSA 2048");
-        asymmetricAlgorithms.add("RSA 4096");
+        asymmetricAlgorithms.add(rsa1024);
+        asymmetricAlgorithms.add(rsa2048);
+        asymmetricAlgorithms.add(rsa4096);
+
+        rsaKeySizesHashMap.put(rsa1024, KeySizes.RSA1024);
+        rsaKeySizesHashMap.put(rsa2048, KeySizes.RSA2048);
+        rsaKeySizesHashMap.put(rsa4096, KeySizes.RSA4096);
+
     }
 
-
-    private void showErrorDialog(String title, String header, String text) {
+    /**
+     * Izvrsava ispisivanje
+     *
+     * @param title
+     * @param header
+     * @param text
+     * @param type
+     */
+    private void displayDialog(String title, String header, String text, Alert.AlertType type) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(header);
@@ -80,94 +132,191 @@ public class Controller {
     }
 
     /**
-     * Koristi se za pretragu fajla koji zelimo da kriptujemo. Otvara prozor i upisuje u textpox putanju.
+     * Poziva metodu za ispis dialoga, prikaz, kako god.
+     * Tip se zakljucuje iz naziva metode
+     *
+     * @param title
+     * @param header
+     * @param text
      */
-//    public void browseFiileAction(ActionEvent actionEvent) {
-//        FileChooser fileChooser = new FileChooser();
-//        File encryptFile = fileChooser.showOpenDialog(Main.mainReference.currentStage);
-//        if(encryptFile != null) {
-//            browseFileLocationTextField.setText(encryptFile.getAbsolutePath());
-//        }
-//    }
-    private boolean checkFilePath(String filePath) {
-        String regularExpression = "([a-zA-Z]:)?(\\[a-zA-Z0-9_-]+)+\\?";
-        Pattern pattern = Pattern.compile(regularExpression);
-        Matcher matcher = pattern.matcher(filePath);
-        return matcher.matches();
+    private void showErrorDialog(String title, String header, String text) {
+        displayDialog(title, header, text, Alert.AlertType.ERROR);
+    }
+
+    /**
+     * Poziva metodu za ispis dialoga, prikaz, kako god.
+     * Tip se zakljucuje iz naziva metode
+     *
+     * @param title
+     * @param header
+     * @param text
+     */
+    private void showWarningDialog(String title, String header, String text) {
+        displayDialog(title, header, text, Alert.AlertType.WARNING);
+    }
+
+    /**
+     * Poziva metodu za ispis dialoga, prikaz, kako god.
+     * Tip se zakljucuje iz naziva metode
+     *
+     * @param title
+     * @param header
+     * @param text
+     */
+    private void showSuccessDialog(String title, String header, String text) {
+        displayDialog(title, header, text, Alert.AlertType.CONFIRMATION);
+    }
+
+    /**
+     * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
+     * @param selection
+     * @return
+     */
+    private KeySizes parseRSAAlgorithmSelection(String selection) {
+        return rsaKeySizesHashMap.get(selection);
+    }
+
+    /**
+     * TODO [INTEGRACIJA] Implementirati analogno parseRSAAlgorithmSelection metodi iznad
+     * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
+     * @param selection
+     * @return
+     */
+    private Object parseSymmetricKeyAlgorithmSelection(String selection) {
+        return null;
+    }
+
+    // TODO [INTEGRACIJA] implementirati metodu za dobijanje kljuca iz potpisa, potipis ima informaciju o KEYID
+    private Object parseSignatureSelectionToKey(String signature) {
+        String[] elements = signature.split(", ");
+        String userName = elements[0];
+        String email = elements[1];
+        String keyID = elements[2];
+
+        // TODO [INTEGRACIJA] Pretraga trazenog kljuca, vracanje istog;
+        // --------| CODE GOES HERE
+        // ....
+        // --------|
+
+        return null;
+    }
+
+    /**
+     * Vrsi konverziju koja je pogodna za choicebox-ove kako bi se kasnije uradila konverzija za signature
+     *
+     * KORISTITI ZA SVE CHOICE BOX-OVE!!
+     * @param exportedKeyData
+     * @return
+     */
+    private String parseExportedKeyDataToChoiceBoxReadableText(ExportedKeyData exportedKeyData) {
+        String username = exportedKeyData.getUserName();
+        String email = exportedKeyData.getEmail();
+        long keyID = exportedKeyData.getKeyID();
+
+        return String.format("%s, %s, %d", username, email, keyID);
+
     }
 
     public void sendAction(ActionEvent actionEvent) {
         String fileLocation = browseFileLocationTextField.getText();
-        if (fileLocation.length() == 0 || !checkFilePath(fileLocation)) {
-            showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath", "You have to specify a correct filepath!");
-            return;
-        }
         File file = new File(fileLocation);
         if (!file.exists()) {
-            showErrorDialog("Input parameters are incorrrect!", "File doesn't exist!", "The file with the provided filepath doesn't exist!");
+            showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath!", "The file with the provided filepath doesn't exist or the filepath isnt correct!");
             return;
         }
-        // -- Ovo treba prosiriti tako da mozemo vise ljudi da odabermeo
+
         boolean useEncryption = useEncryptionCheckBox.isSelected();
-        String encryptionAlgorithm = (String) encryptionAlgorithmsChoiceBox.getValue();
-        //
         boolean sign = signCheckBox.isSelected();
         boolean useCompression = compressionCheckBox.isSelected();
         boolean base64 = base64ConversionCheckBox.isSelected();
+
         String signature = (String) signChoiceBox.getValue();
+        String encryptionAlgorithm = (String) encryptionAlgorithmsChoiceBox.getValue();
+
+        // TODO [INTEGRACIJA] Uraditi parsiranje enkripcionog algoritma uz pomoc parseSymmetricKeyAlgorithmSelection
+        // --------| CODE GOES HERE
+        // ....
+        // --------|
+
+        // Ako smo se opredelili za potpis, moramo da vidimo da li je signature prazan
+        // Signature treba da se generise na osnovu Username, mail i keyID!!!!
+        // TODO [INTEGRACIJA] Parsirati nase kljuceve (samo privatne) da se izlistaju po definisanoj strukturi i parsirati
 
         if (sign && signature == null) {
             showErrorDialog("Input parameters are incorrrect!", "Incorrect signature", "You have to specify for the signature!");
             return;
         }
-        // Slicno za enkripciju
 
-        // Algorithm
+        // Ovo je lista gde stavljamo ljude za koje sifrujemo poruku
+        ArrayList<EncryptionWrapper> data = new ArrayList<>();
+
+
+        // TODO [INTEGRACIJA] Ovde pocinje deo za implementaciju sifrovanja, potpisivanja i zipovanja, zavisi od API-ja
+        if (useEncryption) {
+            /**
+             * Ovaj deo je napravljen tako da mi dohvatamo sve izlistane u table-view za sifrovanje (slanje) akko je
+             * stiklirano da zelimo enkripciju.
+             *
+             * Encryption wrapper je klasa napravljena da se sastoji od ExtractedKeyData i boolean polja koje
+             * se vezuje za checkbox u tabeli. Tako proveravamo da li saljemo tom i tom liku
+             */
+            for (int i = 0; i < publicKeyEncryptionChoiceTableView.getItems().size(); i++) {
+                EncryptionWrapper temp = (EncryptionWrapper) publicKeyEncryptionChoiceTableView.getItems().get(i);
+                if (temp.isSelected())
+                    data.add(temp);
+            }
+
+            // Ako nikoga ne stikliramo
+            if (data.size() == 0) {
+                showErrorDialog("Input parameters are incorrrect!", "Invalid number of recipients!", "You have to specify everyone that you want to receive your message !");
+                return;
+            }
+        }
+        // TODO [INTEGRACIJA] Uraditi algoritam za slanje u zavisnosti od odabranih parametara
+
 
     }
 
     /**
      * Promenimo stanje ChoiceBox-a na disabled ako je odcekirano (za use encryption)
+     *
      * @param actionEvent
      */
     public void useEncryptionChangeAction(ActionEvent actionEvent) {
         encryptionAlgorithmsChoiceBox.setDisable(!useEncryptionCheckBox.isSelected());
+        publicKeyEncryptionChoiceTableView.setDisable(!useEncryptionCheckBox.isSelected());
     }
 
     /**
      * Promenimo stanje ChoiceBox-a na disabled ako je odcekirano ( za sign)
+     *
      * @param actionEvent
      */
     public void signChangeAction(ActionEvent actionEvent) {
         signChoiceBox.setDisable(!signCheckBox.isSelected());
     }
 
+    /**
+     * Stavljeno za svaki slucaj, ne koristi se
+     * @param actionEvent
+     */
     public void compressionChangeAction(ActionEvent actionEvent) {
+        // Empty
     }
-
+    /**
+     * Stavljeno za svaki slucaj, ne koristi se
+     * @param actionEvent
+     */
     public void base64ConversionChangeAction(ActionEvent actionEvent) {
+        // Empty
     }
 
     // End - Encryption
 
-
     /**
-     * Inicijalizovanje pogleda, menjati po potrebi
+     * Samo pravimo kolone za ispis svih sertifikata, nis spec
      */
-    @FXML
-    void initialize() {
-        // Ubacujemo algoritme koje nudomo
-        encryptionAlgorithmsChoiceBox.setItems(FXCollections.observableList(symmetricAlgorithms));
-        newKeyPairAlgorithm.setItems(FXCollections.observableList(asymmetricAlgorithms));
-
-        ExportedKeyData dummyData = new ExportedKeyData();
-        dummyData.setEmail("stefant@98.com");
-        dummyData.setUserName("Stefan Teslic");
-        dummyData.setKeyID(123123123);
-        dummyData.setValidFrom(new Date());
-        dummyData.setValidUntil(new Date(2022, 12, 12));
-        keys.add(dummyData);
-
+    private void createCertificatesListView() {
         TableColumn nameColumn = new TableColumn("Name");
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("userName"));
         TableColumn emailColumn = new TableColumn("Email");
@@ -181,10 +330,89 @@ public class Controller {
         TableColumn isMaster = new TableColumn("Master Key");
         isMaster.setCellValueFactory(new PropertyValueFactory<>("isMasterKey"));
         certificateTableTableView.getColumns().addAll(nameColumn, emailColumn, validFrom, validUntil, keyId, isMaster);
-        certificateTableTableView.getItems().add(dummyData);
 
     }
 
+    /**
+     * Dodajemo kolone u tabelu za enkripciju, treba napraviti posebnu kolonu za checkbox
+     * <a href="https://stackoverflow.com/a/36953229">Link</a> za checkbox dodavanje, samo prebaceno u lambda
+     *
+     * Property value factory implicitno poziva za klasu koju prosledjujes prilikom dodavanja u table
+     * gettere na osnovu field-name-a koji zapises ovde.
+     *
+     * Tacnije - poziva bilo koju metodu sa konvencijom Camel-Case getFieldname()... Ne mora da bude polje u samoj
+     * klasi, bitna je konvencija imenovanja. Referencirati Wrapper klasu i pogledati primer gettera! Polje je Extracted
+     * key data i onda vracamo iz tog objekta sta nam je potrebno
+     *
+     */
+    private void initializePublicKeyEncryptionKeys() {
+        TableColumn encryptionCheckbox = new TableColumn("Encrypt");
+        encryptionCheckbox.setCellValueFactory((Callback<TableColumn.CellDataFeatures<EncryptionWrapper, CheckBox>, ObservableValue<CheckBox>>) arg0 -> {
+            EncryptionWrapper user = arg0.getValue();
+            CheckBox checkBox = new CheckBox();
+            checkBox.selectedProperty().setValue(user.isSelected());
+            checkBox.selectedProperty().addListener((ov, old_val, new_val) -> user.setSelected(new_val));
+            return new SimpleObjectProperty<>(checkBox);
+        });
+        TableColumn encryptionName = new TableColumn("Name");
+        encryptionName.setCellValueFactory(new PropertyValueFactory<>("userName"));
+        TableColumn encryptionEmail = new TableColumn("Email");
+        encryptionEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+        TableColumn encryptionKeyId = new TableColumn("Key ID");
+        encryptionKeyId.setCellValueFactory(new PropertyValueFactory<>("keyID"));
+
+        publicKeyEncryptionChoiceTableView.getColumns().addAll(encryptionCheckbox, encryptionName, encryptionEmail, encryptionKeyId);
+    }
+
+    /**
+     * Ovo je inicijalizovanje pogled.
+     * Izvrsava se pre svaceg, automatski se poziva.
+     *
+     */
+    @FXML
+    void initialize() {
+        // Ubacujemo algoritme koje nudomo, algoritmi su definisani gore u inicijalizacionom bloku
+        encryptionAlgorithmsChoiceBox.setItems(FXCollections.observableList(symmetricAlgorithms));
+        newKeyPairAlgorithm.setItems(FXCollections.observableList(asymmetricAlgorithms));
+
+
+        /**
+         * TODO [INTEGRACIJA] Tu treba da stoji logika za dohvatanje svih kljuceva u sistemu radi ispisa, za sad samo dummy
+         */
+        ExportedKeyData dummyData = new ExportedKeyData();
+        dummyData.setEmail("stefant@98.com");
+        dummyData.setUserName("Stefan Teslic");
+        dummyData.setKeyID(123123123);
+        dummyData.setValidFrom(new Date());
+        dummyData.setValidUntil(new Date(2022, 12, 12));
+        keys.add(dummyData);
+
+        // Referencirati ovu metodu
+        createCertificatesListView();
+
+        // TODO [INTEGRACIJA] Dodati sve kljuceve u for-petlji --- Mozda ima addALL?
+        certificateTableTableView.getItems().add(dummyData);
+
+        // Referencirati metodu
+        initializePublicKeyEncryptionKeys();
+
+        // TODO [INTEGRACIJA] Za sve kljuceve KOJI SU PUBLIC (potrebna isMaster provera, a sta ako sifrujemo za neki drugi nas privatni kljuc? mozda ne treba provera). Treba napraviti Wrapper objekat i staviti false na sve!!!
+        /**
+         * Wrapper objekat je da bi checkbox radio!!!
+         */
+        EncryptionWrapper ew = new EncryptionWrapper();
+        ew.setSelected(false);
+        ew.setElement(dummyData);
+        publicKeyEncryptionChoiceTableView.getItems().add(ew);
+
+
+        // TODO [INTEGRACIJA] Tu treba popuniti takodje i ostale choiceBox-ove gde mozemo da biramo kljuceve
+    }
+
+    /**
+     * Otvara file search dialog i upisuje u textfield
+     * @param actionEvent
+     */
     public void browseFiileAction(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");
@@ -194,7 +422,23 @@ public class Controller {
         }
     }
 
+    /**
+     * Elegantan nacin za unos password-a, obavezno koristiti za dekripcije/enkripcije, sta vec
+     * @return
+     */
+    private String passwordInputDialogBox() {
+        PasswordDialog pd = new PasswordDialog();
+        Optional<String> result = pd.showAndWait();
+        AtomicReference<String> passwordResult = new AtomicReference<>();
+        result.ifPresent(password -> passwordResult.set(password));
+        return passwordResult.get();
+    }
 
+    /**
+     * Ova metoda ima zadatak da izvrsi dekripciju fajla i izvrsi njenu verifikaciju.
+     * Stavio sam pocetan kod samo za proveru validnosti fajla, ostatak je sustinski API
+     * @param actionEvent
+     */
     public void startDecriptionAndVerificationButton(ActionEvent actionEvent) {
         String fileToDecrypt = browseDecryptionFileLocationTextField.getText();
         File file = new File(fileToDecrypt);
@@ -202,18 +446,28 @@ public class Controller {
             showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath", "You have to specify the correct file path and/or the file doesn't exist!");
             return;
         }
-        try {
-            InputStream stream = new FileInputStream(file);
-            // algoritma
+        try (InputStream stream = new FileInputStream(file)) {
 
+            // TODO [INTEGRACIJA] Koriscenje funkcionalnosti za dekripciju i verifikaciju!
+
+
+            // --------| CODE GOES HERE
+            // ....
+            // --------|
             // displayDecriptionAndVerificationOutputTextField.setText ssa rezultatom
             // Eventualno dialog box sa info da li je uspeo da verifikuje
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Otvara file search dialog i upisuje u textfield
+     * @param actionEvent
+     */
     public void chooseDecryptionFileLocation(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");
@@ -223,6 +477,11 @@ public class Controller {
         }
     }
 
+    /**
+     * Ovo treba da sacuva dekriptovan fajl. Postavlja se pitanje -- Kako cuvati dekriptovan fajl. Prosiriti
+     * Controller klasu po potrebi
+     * @param actionEvent
+     */
     public void saveDecryptedFIle(ActionEvent actionEvent) {
         String fileLocation = decryptionFileLocationTextField.getText();
         if (fileLocation.length() == 0) {
@@ -230,28 +489,37 @@ public class Controller {
             return;
         }
         File newFile = new File(fileLocation);
-        OutputStream os;
-        try {
-            newFile.createNewFile();
-            os = new FileOutputStream(newFile);
-            // algoritam
 
+        try (OutputStream os = new FileOutputStream(newFile)){
+            newFile.createNewFile();
+
+            // TODO [INTEGRACIJA] Implementirati cuvanje dekriptovanog fajla sa OutputStreamom
+            // --------| CODE GOES HERE
+            // ....
+            // --------|
         } catch (IOException e) {
             showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath", "You have to specify the correct file path!");
-        } finally {
-            // Kako zatvoriti stream??
         }
     }
 
+    /**
+     * Otvara directory chooser (TO ZNACI DA TREBA POSTAVITI NEKAKO NAZIV .asc FAJLA INTERNO)
+     * Putanju printuje u textbox
+     * @param actionEvent
+     */
     public void chooseExportKeysFileLocation(ActionEvent actionEvent) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Resource File");
-        File file = fileChooser.showOpenDialog(Main.mainReference.currentStage);
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Choose Directory");
+        File file = directoryChooser.showDialog(Main.mainReference.currentStage);
         if (file != null) {
             exportFileLocationTextField.setText(file.getAbsolutePath());
         }
     }
 
+    /**
+     * Vrsi sam EXPORT kljuca, dohvata se kljuc iz textboca i dohvata se vrednost odabranog kljuca za export
+     * @param actionEvent
+     */
     public void executeExportKey(ActionEvent actionEvent) {
         String destination = exportFileLocationTextField.getText();
         String key = (String) exportKeyChoiceCombobox.getValue(); // konverzija u ExportedData
@@ -261,42 +529,106 @@ public class Controller {
             return;
         }
 
-//        TODO if (key exists in keychain)
+        // TODO [INTEGRACIJA] Obavezno proveriti postojanost kljuca
+
         if (destination.length() == 0) {
             showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath", "You have to specify the correct filepath!");
             return;
         }
 
         File outputFile = new File(destination);
-        try {
+        try (OutputStream os = new FileOutputStream(outputFile)){
             outputFile.createNewFile();
-            OutputStream os = new FileOutputStream(outputFile);
-
-            // Algorithm
+            // TODO [INTEGRACIJA] Algoritam za export kljuca
 
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            // Zatvaranje output stream
         }
     }
 
+    /**
+     * Napravljena za svaki slucaj
+     * @param actionEvent
+     */
     public void keyChoiceComboboxAction(ActionEvent actionEvent) {
+        // Empty...
     }
 
+    /**
+     * Biramo fajl koji sadrzi kljuc za import
+     *
+     * @param actionEvent
+     */
     public void browseImportSecretKey(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Resource File");
+        File file = fileChooser.showOpenDialog(Main.mainReference.currentStage);
+        if (file != null) {
+            pathToImportKeyFileTextField.setText(file.getAbsolutePath());
+        }
     }
 
+    /**
+     * Ova metoda treba da upise sam kljuc u keyring
+     * @param actionEvent
+     */
     public void executeImportSecretKey(ActionEvent actionEvent) {
+        String importPath = pathToImportKeyFileTextField.getText();
+        File file = new File(importPath);
+        if (!file.exists()) {
+            showErrorDialog("Input parameters are incorrrect!", "Incorrect path to key", "You have have to specify the correct path to the secret key file!");
+            return;
+        }
+        try (InputStream is = new FileInputStream(file)) {
+            // TODO [INTEGRACIJA] Ovde treba staviti logiku za unos privatnog kljuca, OBAVEZNO NA KRAJU TREBA AZURIRATI SVE KOMPONENTE {jos da skontam kako da napravim observera da to radi hahah}
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
+
+    /**
+     * Biramo fajl koji sadrzi kljuc za import
+     *
+     * @param actionEvent
+     */
     public void browseImportPublicKey(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Resource File");
+        File file = fileChooser.showOpenDialog(Main.mainReference.currentStage);
+        if (file != null) {
+            publicKeyFIleLocationTextField.setText(file.getAbsolutePath());
+        }
     }
 
+    /**
+     * Logicno - ovde treba da se izxvrsi sam unos javnog kljuca
+     * @param actionEvent
+     */
     public void executeImportPublicKey(ActionEvent actionEvent) {
+        String importPath = publicKeyFIleLocationTextField.getText();
+        File file = new File(importPath);
+        if (!file.exists()) {
+            showErrorDialog("Input parameters are incorrrect!", "Incorrect path to key", "You have have to specify the correct path to the secret key file!");
+            return;
+        }
+        try (InputStream is = new FileInputStream(file)) {
+            // TODO [INTEGRACIJA] Ovde treba staviti logiku za unos javnog kljuca, OBAVEZNO NA KRAJU TREBA AZURIRATI SVE KOMPONENTE {jos da skontam kako da napravim observera da to radi hahah}
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-
+    /**
+     * Pomocna metoda za mathc-ovanje regex-a za mejl
+     * @param mail
+     * @return
+     */
     private boolean checkMail(String mail) {
         String regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
         Pattern pattern = Pattern.compile(regex);
@@ -304,11 +636,16 @@ public class Controller {
         return matcher.matches();
     }
 
+    /**
+     * Kao sto ime nagovestava -- Ova metoda ima zadatak da izgenerise novi keypair
+     * @param actionEvent
+     */
     public void generateNewKeyPairButton(ActionEvent actionEvent) {
         String name = newKeyPairName.getText();
         String email = newKeyPairEmail.getText();
         String password = newKeyPairPassword.getText();
         String algorithm = (String) newKeyPairAlgorithm.getValue();
+        KeySizes rsaSize = parseRSAAlgorithmSelection(algorithm);
         if (name.length() == 0) {
             showErrorDialog("Incorrect parameter input!", "Name input incorrect!", "The name parameter must be non-empty!");
             return;
@@ -329,12 +666,14 @@ public class Controller {
             return;
         }
 
-        // OK
-        // Generisanje
-
+        // TODO [INTEGRACIJA] Izvrsavanje dodavanja novog kljuca -- OBAVEZNO AZURIRANJE KOMPONENTI
     }
 
-    public void browseDecryptionFIleAction(ActionEvent actionEvent) {
+    /**
+     * Otvara se file chooser koji postavlja vrednost apsolutne putanje u textbox
+     * @param actionEvent
+     */
+    public void browseDecryptionFileAction(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");
         File file = fileChooser.showOpenDialog(Main.mainReference.currentStage);
@@ -343,28 +682,47 @@ public class Controller {
         }
     }
 
+    /**
+     * Ova metoda se poziva sa tab-a view certificates, klikom desnog klika na neki sertifikat i odabirom
+     * za export kljuca. Ova metoda treba da export-uje javni kljuc. Imamo dve metode za export javnog kljuca, da!
+     *
+     * Treba prikazati uspesnost
+     * @param actionEvent
+     */
     public void contextMenuExportKey(ActionEvent actionEvent) {
         ExportedKeyData keyData = (ExportedKeyData) certificateTableTableView.getSelectionModel().getSelectedItem();
         if (keyData != null) {
-            // Obrada
+            // TODO [INTEGRACIJA] Obrada za export JAVNOG kljuca iz liste svih sertifikata na desni klik
         }
     }
 
+    /**
+     * Ova metoda se poziva sa tab-a view certificates, klikom desnog klika na neki sertifikat i odabirom
+     * za brisanje kljuca. TU obavezno treba da se pozove metoda koja generise dialog za unos passworda i provera ispravnosti istog, ako je master,
+     * ako nije master samo treba prikazati dijalog za potvrdu selekcije
+     * @param actionEvent
+     */
     public void contextMenuDeleteKey(ActionEvent actionEvent) {
         ExportedKeyData keyData = (ExportedKeyData) certificateTableTableView.getSelectionModel().getSelectedItem();
         if (keyData != null) {
-            // Obrada
+            // TODO [INTEGRACIJA] Obrada za delete kljuca iz liste svih sertifikata na desni klik -- OBAVEZNO TU KORISTITI Password Dialog METODU ZA PROVERU PASSWORD AKO JE ISMASTER!!!!
         }
     }
 
+    /**
+     * Ova metoda treba da izvrsi backup/export privatnog/tajnog kljuca.
+     * Dozvoliti uz pitanje za password!!!!
+     * @param actionEvent
+     */
     public void contextMenuBackupKey(ActionEvent actionEvent) {
         ExportedKeyData keyData = (ExportedKeyData) certificateTableTableView.getSelectionModel().getSelectedItem();
         if (keyData != null) {
+            // Ne moze secret key backup ako nije secret key
             if (!keyData.getIsMasterKey()) {
                 showErrorDialog("Incorrect key selection!", "Cannot backup public key!", "You cant invoke master key backup on public keys!");
                 return;
             } else {
-                // obrada
+                // TODO [INTEGRACIJA] Obrada za export TAJNOG kljuca iz liste svih sertifikata na desni klik, obavezno provera password-a
             }
         }
     }
