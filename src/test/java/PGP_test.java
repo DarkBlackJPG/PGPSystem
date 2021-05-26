@@ -62,17 +62,18 @@ class PGP_test {
 //
 //            System.out.println();
 //            /////////////////////////////////////////////////
-            String signed = pgp.signFile(fileToSign, privateKey, publicKey, true, true);
-            System.out.println("Signed file:");
-            System.out.println("===================================================");
-            input = new FileInputStream(signed);
-            Streams.pipeAll(input, System.out);
-            input.close();
-
+//            String signed = pgp.signFile(fileToSign, privateKey, publicKey, false, true);
+//            System.out.println("Signed file:");
+//            System.out.println("===================================================");
+//            input = new FileInputStream(signed);
+//            Streams.pipeAll(input, System.out);
+//            input.close();
+//
+//            System.out.println();
             System.out.println("Verify file:");
             System.out.println("===================================================");
 //            if(pgp.verifyFile(signed, KeyringManager.publicKeyFile)){
-            if(pgp.verifyFile(fileToDecrypt, KeyringManager.publicKeyFile)){
+            if(pgp.verifyFile(fileToSign+".bpg", KeyringManager.publicKeyFile)){
                 System.out.println("Verified");
             } else {
                 System.out.println("Not verified");
