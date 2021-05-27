@@ -67,6 +67,8 @@ public class Controller {
     private List<String> asymmetricAlgorithms = new ArrayList<>();
     private ObservableList<ExportedKeyData> allKeys = FXCollections.observableArrayList();
 
+    // TODO [INTEGRACIJA] KeyManager keyManager;
+
     /**
      * TODO [INTEGRACIJA] Izbrisati definiciju enuma, korisiti vec implementiranu u RSA.java klasi
      * <p>
@@ -99,7 +101,7 @@ public class Controller {
 
 
     // Inicijalizacija neophodnih struktura podataka za ispis u FX komponente
-    {
+    public Controller() {
         String rsa1024 = "RSA 1024";
         String rsa2048 = "RSA 2048";
         String rsa4096 = "RSA 4096";
@@ -114,6 +116,11 @@ public class Controller {
         rsaKeySizesHashMap.put(rsa1024, KeySizes.RSA1024);
         rsaKeySizesHashMap.put(rsa2048, KeySizes.RSA2048);
         rsaKeySizesHashMap.put(rsa4096, KeySizes.RSA4096);
+
+        /**
+         * TODO [INTEGRACIJA] keyManager = new KeyManager();
+         * TODO [INTEGRACIJA] Main.keyManagerReference = keyManager;
+         */
 
     }
 
@@ -132,6 +139,19 @@ public class Controller {
         alert.setContentText(text);
         alert.showAndWait();
 
+    }
+
+    private void removeKeyFromObservableKeyCollection(ExportedKeyData keyData) {
+        removeKeyFromObservableKeyCollection(keyData.getKeyID());
+    }
+
+    private void removeKeyFromObservableKeyCollection(long keyID) {
+        for (int i = 0; i < allKeys.size(); ++i) {
+            if (allKeys.get(i).getKeyID() == keyID) {
+                allKeys.remove(i);
+                break;
+            }
+        }
     }
 
     /**
@@ -172,6 +192,7 @@ public class Controller {
 
     /**
      * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
+     *
      * @param selection
      * @return
      */
@@ -182,6 +203,7 @@ public class Controller {
     /**
      * TODO [INTEGRACIJA] Implementirati analogno parseRSAAlgorithmSelection metodi iznad
      * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
+     *
      * @param selection
      * @return
      */
@@ -206,8 +228,9 @@ public class Controller {
 
     /**
      * Vrsi konverziju koja je pogodna za choicebox-ove kako bi se kasnije uradila konverzija za signature
-     *
+     * <p>
      * KORISTITI ZA SVE CHOICE BOX-OVE!!
+     *
      * @param exportedKeyData
      * @return
      */
@@ -301,13 +324,16 @@ public class Controller {
 
     /**
      * Stavljeno za svaki slucaj, ne koristi se
+     *
      * @param actionEvent
      */
     public void compressionChangeAction(ActionEvent actionEvent) {
         // Empty
     }
+
     /**
      * Stavljeno za svaki slucaj, ne koristi se
+     *
      * @param actionEvent
      */
     public void base64ConversionChangeAction(ActionEvent actionEvent) {
@@ -339,14 +365,13 @@ public class Controller {
     /**
      * Dodajemo kolone u tabelu za enkripciju, treba napraviti posebnu kolonu za checkbox
      * <a href="https://stackoverflow.com/a/36953229">Link</a> za checkbox dodavanje, samo prebaceno u lambda
-     *
+     * <p>
      * Property value factory implicitno poziva za klasu koju prosledjujes prilikom dodavanja u table
      * gettere na osnovu field-name-a koji zapises ovde.
-     *
+     * <p>
      * Tacnije - poziva bilo koju metodu sa konvencijom Camel-Case getFieldname()... Ne mora da bude polje u samoj
      * klasi, bitna je konvencija imenovanja. Referencirati Wrapper klasu i pogledati primer gettera! Polje je Extracted
      * key data i onda vracamo iz tog objekta sta nam je potrebno
-     *
      */
     private void initializePublicKeyEncryptionKeys() {
         TableColumn encryptionCheckbox = new TableColumn("Encrypt");
@@ -384,7 +409,6 @@ public class Controller {
     /**
      * Ovo je inicijalizovanje pogled.
      * Izvrsava se pre svaceg, automatski se poziva.
-     *
      */
     @FXML
     void initialize() {
@@ -423,7 +447,7 @@ public class Controller {
         dummyData.setValidFrom(new Date());
         dummyData.setValidUntil(new Date(2022, 12, 12));
         dummyData.setMasterKey(true);
-       addKeyToAllKeys(dummyData);
+        addKeyToAllKeys(dummyData);
 
         // Referencirati ovu metodu
         createCertificatesListView();
@@ -449,6 +473,7 @@ public class Controller {
 
     /**
      * Otvara file search dialog i upisuje u textfield
+     *
      * @param actionEvent
      */
     public void browseFiileAction(ActionEvent actionEvent) {
@@ -462,6 +487,7 @@ public class Controller {
 
     /**
      * Elegantan nacin za unos password-a, obavezno koristiti za dekripcije/enkripcije, sta vec
+     *
      * @return
      */
     private String passwordInputDialogBox() {
@@ -475,6 +501,7 @@ public class Controller {
     /**
      * Ova metoda ima zadatak da izvrsi dekripciju fajla i izvrsi njenu verifikaciju.
      * Stavio sam pocetan kod samo za proveru validnosti fajla, ostatak je sustinski API
+     *
      * @param actionEvent
      */
     public void startDecriptionAndVerificationButton(ActionEvent actionEvent) {
@@ -504,6 +531,7 @@ public class Controller {
 
     /**
      * Otvara file search dialog i upisuje u textfield
+     *
      * @param actionEvent
      */
     public void chooseDecryptionFileLocation(ActionEvent actionEvent) {
@@ -518,6 +546,7 @@ public class Controller {
     /**
      * Ovo treba da sacuva dekriptovan fajl. Postavlja se pitanje -- Kako cuvati dekriptovan fajl. Prosiriti
      * Controller klasu po potrebi
+     *
      * @param actionEvent
      */
     public void saveDecryptedFIle(ActionEvent actionEvent) {
@@ -528,7 +557,7 @@ public class Controller {
         }
         File newFile = new File(fileLocation);
 
-        try (OutputStream os = new FileOutputStream(newFile)){
+        try (OutputStream os = new FileOutputStream(newFile)) {
             newFile.createNewFile();
 
             // TODO [INTEGRACIJA] Implementirati cuvanje dekriptovanog fajla sa OutputStreamom
@@ -543,6 +572,7 @@ public class Controller {
     /**
      * Otvara directory chooser (TO ZNACI DA TREBA POSTAVITI NEKAKO NAZIV .asc FAJLA INTERNO)
      * Putanju printuje u textbox
+     *
      * @param actionEvent
      */
     public void chooseExportKeysFileLocation(ActionEvent actionEvent) {
@@ -556,6 +586,7 @@ public class Controller {
 
     /**
      * Vrsi sam EXPORT kljuca, dohvata se kljuc iz textboca i dohvata se vrednost odabranog kljuca za export
+     *
      * @param actionEvent
      */
     public void executeExportKey(ActionEvent actionEvent) {
@@ -575,7 +606,7 @@ public class Controller {
         }
 
         File outputFile = new File(destination);
-        try (OutputStream os = new FileOutputStream(outputFile)){
+        try (OutputStream os = new FileOutputStream(outputFile)) {
             outputFile.createNewFile();
             // TODO [INTEGRACIJA] Algoritam za export kljuca
 
@@ -586,6 +617,7 @@ public class Controller {
 
     /**
      * Napravljena za svaki slucaj
+     *
      * @param actionEvent
      */
     public void keyChoiceComboboxAction(ActionEvent actionEvent) {
@@ -608,6 +640,7 @@ public class Controller {
 
     /**
      * Ova metoda treba da upise sam kljuc u keyring
+     *
      * @param actionEvent
      */
     public void executeImportSecretKey(ActionEvent actionEvent) {
@@ -644,6 +677,7 @@ public class Controller {
 
     /**
      * Logicno - ovde treba da se izxvrsi sam unos javnog kljuca
+     *
      * @param actionEvent
      */
     public void executeImportPublicKey(ActionEvent actionEvent) {
@@ -664,6 +698,7 @@ public class Controller {
 
     /**
      * Pomocna metoda za mathc-ovanje regex-a za mejl
+     *
      * @param mail
      * @return
      */
@@ -676,6 +711,7 @@ public class Controller {
 
     /**
      * Kao sto ime nagovestava -- Ova metoda ima zadatak da izgenerise novi keypair
+     *
      * @param actionEvent
      */
     public void generateNewKeyPairButton(ActionEvent actionEvent) {
@@ -709,6 +745,7 @@ public class Controller {
 
     /**
      * Otvara se file chooser koji postavlja vrednost apsolutne putanje u textbox
+     *
      * @param actionEvent
      */
     public void browseDecryptionFileAction(ActionEvent actionEvent) {
@@ -723,8 +760,9 @@ public class Controller {
     /**
      * Ova metoda se poziva sa tab-a view certificates, klikom desnog klika na neki sertifikat i odabirom
      * za export kljuca. Ova metoda treba da export-uje javni kljuc. Imamo dve metode za export javnog kljuca, da!
-     *
+     * <p>
      * Treba prikazati uspesnost
+     *
      * @param actionEvent
      */
     public void contextMenuExportKey(ActionEvent actionEvent) {
@@ -738,6 +776,7 @@ public class Controller {
      * Ova metoda se poziva sa tab-a view certificates, klikom desnog klika na neki sertifikat i odabirom
      * za brisanje kljuca. TU obavezno treba da se pozove metoda koja generise dialog za unos passworda i provera ispravnosti istog, ako je master,
      * ako nije master samo treba prikazati dijalog za potvrdu selekcije
+     *
      * @param actionEvent
      */
     public void contextMenuDeleteKey(ActionEvent actionEvent) {
@@ -750,6 +789,7 @@ public class Controller {
     /**
      * Ova metoda treba da izvrsi backup/export privatnog/tajnog kljuca.
      * Dozvoliti uz pitanje za password!!!!
+     *
      * @param actionEvent
      */
     public void contextMenuBackupKey(ActionEvent actionEvent) {

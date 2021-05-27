@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 public class Main extends Application {
     // Sluzi da mozemo da otvorimo file explorer u controlleru, zahteva stage
     static Main mainReference;
+    // TODO [INTEGRACIJA] static KeyManager keyManagerReference;
     Stage currentStage;
 
     @Override
@@ -21,10 +22,14 @@ public class Main extends Application {
         primaryStage.getIcons().add(new Image("logo.png"));
         primaryStage.setResizable(false);
         mainReference = this;
-
         primaryStage.show();
+
     }
 
+    @Override
+    public void stop() {
+        // TODO [INTEGRACIJA] keyManagerReference.saveKeys();
+    }
 
     public static void main(String[] args) {
 
