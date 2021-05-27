@@ -14,18 +14,19 @@ class PGP_test {
     private static String name = "Test Testicle";
     private static String email = "test@testicle.com";
     private static String pass = "pwd";
-    private static String fileToEncrypt = "EncryptionTest.txt";
-    private static String fileToDecrypt = "EncryptionTest.txt.asc";
+    private static String file = "EncryptionTest.txt";
+    private static String fileBPG = "EncryptionTest.txt.bpg";
+    private static String fileASC = "EncryptionTest.txt.asc";
     private static String outputFileName = "123.txt";
-    private static String fileToSign = "EncryptionTest.txt";
 
 
     public static void main(String[] args) {
         PGPKeyPair masterKey;
         InputStream input;
+        String fileName;
 
         try {
-            PGP pgp = PGP.getInstancePGP();
+            //////////////////GENERATE KEY PAIR//////////////////////////////
             masterKey = RSA.RSA_GetUtility()
                     .RSA_SetKeySize(RSA.KeySizes.RSA4096)
                     .RSA_PGPKeyGenerator();
@@ -35,55 +36,67 @@ class PGP_test {
             KeyringManager keyringManager = new KeyringManager();
             keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
             PGPPublicKey publicKey = signingKey.getPublicKey();
-            System.out.println(publicKey.getKeyID());
             PGPPrivateKey privateKey = signingKey.getPrivateKey();
-            System.out.println(privateKey.getKeyID());
+
+//            System.out.println();
+//            //////////////////////////SIGN//////////////////////////////////////
+//            fileName = PGP.signFile(file, privateKey, publicKey, true, false);
+//            System.out.println("Signed file:");
+//            System.out.println("===================================================");
+//            input = new FileInputStream(fileName);
+//            Streams.pipeAll(input, System.out);
+//            input.close();
 //
-//            ///////////////////////////////////////////
-//            pgp.encryptFile(fileToDecrypt,fileToEncrypt,new PGPPublicKey[]{publicKey},
-//                    SymmetricKeyAlgorithmTags.TRIPLE_DES, false, true);
-//            input = new FileInputStream(fileToDecrypt);
+//            System.out.println();
+//            //////////////////////////ENCRYPTION//////////////////////////////////////
+//            fileName = PGP.encryptFile(fileName, file, new PGPPublicKey[]{publicKey},
+//                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, false);
+//            input = new FileInputStream(fileName);
 //            System.out.println("Encrypted file:");
 //            System.out.println("===================================================");
 //            Streams.pipeAll(input, System.out);
 //            input.close();
+
+            //////////////////////////SIGN AND ENCRYPT//////////////////////////////////////
+            fileName = PGP.signAndEncrypt(file, privateKey, new PGPPublicKey[]{publicKey},
+                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, false);
+            System.out.println("Signed and encrypted file:");
+            System.out.println("===================================================");
+            input = new FileInputStream(fileName);
+            Streams.pipeAll(input, System.out);
+            input.close();
+            System.out.println();
+            //////////////////////////DECRYPTION AND VERIFICATION//////////////////////////////////////
+            PGP.decryptAndVerify(fileASC, KeyringManager.privateKeyFile,
+                    KeyringManager.publicKeyFile, pass, outputFileName);
+            System.out.println("Decrypted file:");
+            System.out.println("===================================================");
+            input = new FileInputStream(file);
+            Streams.pipeAll(input, System.out);
+            input.close();
 //
-//            /////////////////////////////////////////////////
-//            pgp.decryptFile(fileToDecrypt, KeyringManager.privateKeyFile, pass, outputFileName);
+//            System.out.println();
+//            //////////////////////////DECRYPTION//////////////////////////////////////
+//            PGP.decryptFile(fileASC, KeyringManager.privateKeyFile pass, outputFileName);
 //            System.out.println("Decrypted file:");
 //            System.out.println("===================================================");
-//            try {
-//                input = new FileInputStream(fileToEncrypt);
-//            } catch (Exception e){
-//                input = new FileInputStream(fileToDecrypt);
-//            }
+//            input = new FileInputStream(file);
 //            Streams.pipeAll(input, System.out);
 //            input.close();
-//
+////
 //            System.out.println();
-//            /////////////////////////////////////////////////
-//            String signed = pgp.signFile(fileToSign, privateKey, publicKey, true, false);
-//            System.out.println("Signed file:");
+//            //////////////////////////VERIFY//////////////////////////////////////
+//            System.out.println("Verify file:");
 //            System.out.println("===================================================");
-//            input = new FileInputStream(signed);
-//            Streams.pipeAll(input, System.out);
-//            input.close();
-//
-//            System.out.println();
-            System.out.println("Verify file:");
-            System.out.println("===================================================");
-//            if(pgp.verifyFile(signed, KeyringManager.publicKeyFile)){
-            if(pgp.verifyFile(fileToSign+".asc", KeyringManager.publicKeyFile)){
-                System.out.println("Verified");
-            } else {
-                System.out.println("Not verified");
-            }
+//            if(PGP.verifyFile(fileName, KeyringManager.publicKeyFile)){
+////            if(pgp.verifyFile(fileToSign+".asc", KeyringManager.publicKeyFile)){
+//                System.out.println("Verified");
+//            } else {
+//                System.out.println("Not verified");
+//            }
+
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e);
         }
-
-
-
     }
 }
