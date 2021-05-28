@@ -38,14 +38,14 @@ class PGP_test {
             PGPPublicKey publicKey = signingKey.getPublicKey();
             PGPPrivateKey privateKey = signingKey.getPrivateKey();
 
-//            System.out.println();
-//            //////////////////////////SIGN//////////////////////////////////////
-//            fileName = PGP.signFile(file, privateKey, publicKey, true, false);
-//            System.out.println("Signed file:");
-//            System.out.println("===================================================");
-//            input = new FileInputStream(fileName);
-//            Streams.pipeAll(input, System.out);
-//            input.close();
+            System.out.println();
+            //////////////////////////SIGN//////////////////////////////////////
+            fileName = PGP.signFile(file, privateKey, publicKey, true, false);
+            System.out.println("Signed file:");
+            System.out.println("===================================================");
+            input = new FileInputStream(fileName);
+            Streams.pipeAll(input, System.out);
+            input.close();
 //
 //            System.out.println();
 //            //////////////////////////ENCRYPTION//////////////////////////////////////
@@ -57,23 +57,23 @@ class PGP_test {
 //            Streams.pipeAll(input, System.out);
 //            input.close();
 
-            //////////////////////////SIGN AND ENCRYPT//////////////////////////////////////
-            fileName = PGP.signAndEncrypt(file, privateKey, new PGPPublicKey[]{publicKey},
-                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, false);
-            System.out.println("Signed and encrypted file:");
-            System.out.println("===================================================");
-            input = new FileInputStream(fileName);
-            Streams.pipeAll(input, System.out);
-            input.close();
-            System.out.println();
-            //////////////////////////DECRYPTION AND VERIFICATION//////////////////////////////////////
-            PGP.decryptAndVerify(fileASC, KeyringManager.privateKeyFile,
-                    KeyringManager.publicKeyFile, pass, outputFileName);
-            System.out.println("Decrypted file:");
-            System.out.println("===================================================");
-            input = new FileInputStream(file);
-            Streams.pipeAll(input, System.out);
-            input.close();
+//            //////////////////////////SIGN AND ENCRYPT//////////////////////////////////////
+//            fileName = PGP.signAndEncrypt(file, privateKey, new PGPPublicKey[]{publicKey},
+//                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, false);
+//            System.out.println("Signed and encrypted file:");
+//            System.out.println("===================================================");
+//            input = new FileInputStream(fileName);
+//            Streams.pipeAll(input, System.out);
+//            input.close();
+//            System.out.println();
+//            //////////////////////////DECRYPTION AND VERIFICATION//////////////////////////////////////
+//            PGP.decryptAndVerify(fileASC, KeyringManager.privateKeyFile,
+//                    KeyringManager.publicKeyFile, pass, outputFileName);
+//            System.out.println("Decrypted file:");
+//            System.out.println("===================================================");
+//            input = new FileInputStream(file);
+//            Streams.pipeAll(input, System.out);
+//            input.close();
 //
 //            System.out.println();
 //            //////////////////////////DECRYPTION//////////////////////////////////////
@@ -85,15 +85,15 @@ class PGP_test {
 //            input.close();
 ////
 //            System.out.println();
-//            //////////////////////////VERIFY//////////////////////////////////////
-//            System.out.println("Verify file:");
-//            System.out.println("===================================================");
-//            if(PGP.verifyFile(fileName, KeyringManager.publicKeyFile)){
-////            if(pgp.verifyFile(fileToSign+".asc", KeyringManager.publicKeyFile)){
-//                System.out.println("Verified");
-//            } else {
-//                System.out.println("Not verified");
-//            }
+            //////////////////////////VERIFY//////////////////////////////////////
+            System.out.println("Verify file:");
+            System.out.println("===================================================");
+            if(PGP.verifyFile(fileName, KeyringManager.publicKeyFile)){
+//            if(pgp.verifyFile(fileToSign+".asc", KeyringManager.publicKeyFile)){
+                System.out.println("Verified");
+            } else {
+                System.out.println("Not verified");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
