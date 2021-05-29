@@ -439,8 +439,8 @@ public class PGP
         // Stream with which encrypted data is written to an output stream
         if(compress) {
             compressedStream =  new PGPCompressedDataGenerator(ZIP_ALGORITHM)
-                                .open(encryptedStream);
-            signatureGenerator.generateOnePassVersion(false)
+                                .open(encryptedStream, new byte[BUFFER_SIZE]);
+            signatureGenerator.generateOnePassVersion(true)
                     .encode(compressedStream);
             finalOutputStream = new PGPLiteralDataGenerator()
                     .open(compressedStream, FILE_TYPE,
@@ -449,7 +449,7 @@ public class PGP
 //            PGPUtil.writeFileToLiteralData(compressedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
             logger.info("file compressed");
         } else {
-            signatureGenerator.generateOnePassVersion(false)
+            signatureGenerator.generateOnePassVersion(true)
                     .encode(encryptedStream);
             PGPUtil.writeFileToLiteralData(encryptedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
         }
