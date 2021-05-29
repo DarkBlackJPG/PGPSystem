@@ -77,7 +77,7 @@ class PGP_test {
 
             //////////////////////////SIGN AND ENCRYPT//////////////////////////////////////
             fileName = PGP.signAndEncrypt(file, privateKey, publicKey, new PGPPublicKey[]{publicKey},
-                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, false);
+                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, true);
             System.out.println("Signed and encrypted file:");
             System.out.println("===================================================");
             input = new FileInputStream(fileName);

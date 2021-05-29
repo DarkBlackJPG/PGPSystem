@@ -431,7 +431,7 @@ public class PGP
 
 
         OutputStream compressedStream = null;
-        File file = new File(signedFile);
+        File file = new File(fileToSign);
         FileInputStream fileInputStream = new FileInputStream(file);
         byte[] fileBytes = fileInputStream.readAllBytes();
         OutputStream encryptedStream = encryptedDataGenerator
