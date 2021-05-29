@@ -15,10 +15,7 @@ import java.security.*;
 import java.util.Date;
 import java.util.Iterator;
 
-import org.bouncycastle.bcpg.ArmoredInputStream;
-import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.*;
 import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -37,8 +34,8 @@ import org.bouncycastle.util.io.Streams;
  */
 @Deprecated
 public class PGPEncrytionUtil {
-
-   /* using System;
+/*
+    using System;
     using System.IO;
     using Org.BouncyCastle.Bcpg;
     using Org.BouncyCastle.Bcpg.OpenPgp;
@@ -118,6 +115,115 @@ public class PGPEncrytionUtil {
             }
         }
     }*/
+
+    public static byte[] signAndEncrypt(final byte[] message,
+                                        final PGPSecretKey secretKey,
+                                        final String secretPwd,
+                                        final PGPPublicKey publicKey,
+                                        final boolean sign,
+                                        final boolean encrypt,
+                                        final boolean compress,
+                                        final boolean converse,
+                                        final String encryptType,
+                                        final  String filename) throws PGPException {
+
+        try {
+            Provider provider = new BouncyCastleProvider();
+
+            OutputStream aux;
+            PGPEncryptedDataGenerator encryptedDataGenerator = null;
+            PGPCompressedDataGenerator compressedDataGenerator = null;
+            PGPSignatureGenerator signatureGenerator = null;
+
+            ByteArrayInputStream in = new ByteArrayInputStream(message);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte bytes[] = message;
+            OutputStream compressedOut = null;
+            OutputStream encOut = null;
+            OutputStream pOut = out;
+
+            if (converse)
+                pOut = new ArmoredOutputStream(out);
+
+            if (encrypt == true) {
+                int encAlgh = -1;
+                if ("AES-128".equals(encryptType))
+                    encAlgh = SymmetricKeyAlgorithmTags.AES_128;
+                else
+                    encAlgh = SymmetricKeyAlgorithmTags.TRIPLE_DES;
+
+                final PGPEncryptedDataGenerator generator = new PGPEncryptedDataGenerator(
+
+                        new JcePGPDataEncryptorBuilder( encAlgh).setWithIntegrityPacket( true )
+                                .setSecureRandom(
+                                        new SecureRandom() )
+                                .setProvider( provider ) );
+                generator.addMethod( new JcePublicKeyKeyEncryptionMethodGenerator( publicKey ).setProvider( provider ) );
+                encOut = generator.open(pOut, new byte[1<<16]);
+            }
+            else
+                encOut = pOut;
+
+            if (compress == true) {
+                // compression
+                compressedDataGenerator =
+                        new PGPCompressedDataGenerator(CompressionAlgorithmTags.ZIP);
+                compressedOut = compressedDataGenerator.open(encOut, new byte[1<<16]);
+            }
+            else
+                compressedOut = encOut;
+
+
+            if (sign == true) {
+                // signing
+                final PGPPrivateKey privateKey = secretKey.extractPrivateKey(
+                        new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(secretPwd.toCharArray()));
+                signatureGenerator = new PGPSignatureGenerator(
+                        new JcaPGPContentSignerBuilder(secretKey.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1)
+                                .setProvider(provider));
+                signatureGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
+                final Iterator<?> it = secretKey.getPublicKey().getUserIDs();
+                if (it.hasNext()) {
+                    final PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
+                    spGen.setSignerUserID(false, (String) it.next());
+                    signatureGenerator.setHashedSubpackets(spGen.generate());
+                }
+
+                signatureGenerator.generateOnePassVersion(false).encode(compressedOut);
+
+            }
+            // creating a file stream
+            final PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
+
+            final OutputStream literalOut = literalDataGenerator
+                    .open(compressedOut, PGPLiteralData.BINARY, filename, new Date(), new byte[4096]);
+
+            final byte[] buf = new byte[4096];
+            for (int len; (len = in.read(buf)) > 0; ) {
+                literalOut.write(buf, 0, len);
+                if (sign == true)
+                    signatureGenerator.update(buf, 0, len);
+            }
+            literalOut.close();
+            literalDataGenerator.close();
+            if (sign == true)
+                signatureGenerator.generate().encode(literalOut);
+            compressedOut.close();
+            if (compress == true)
+                compressedDataGenerator.close();
+            if(encrypt == true)
+                encOut.close();
+            if(converse == true)
+                pOut.close();
+
+            return ((ByteArrayOutputStream) out).toByteArray();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        ;
+        return null;
+    }
+
     public static void signEncryptMessage(InputStream in, OutputStream out, PGPPublicKey publicKey, PGPPrivateKey secretKey, SecureRandom rand) throws Exception {
         out = new ArmoredOutputStream(out);
 

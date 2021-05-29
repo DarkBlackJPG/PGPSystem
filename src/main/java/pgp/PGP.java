@@ -429,20 +429,22 @@ public class PGP
             signatureGenerator.setHashedSubpackets(signatureSubpacketGenerator.generate());
         }
 
-
+        PGPCompressedDataGenerator compressedDataGenerator = null;
         OutputStream compressedStream = null;
-        OutputStream finalOutputStream = null;
+        PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
+        OutputStream literalOutputStream = null;
         File file = new File(fileToSign);
         byte[] fileBytes = new FileInputStream(file).readAllBytes();
         OutputStream encryptedStream = encryptedDataGenerator
                                             .open(outputStream, new byte[BUFFER_SIZE]);
         // Stream with which encrypted data is written to an output stream
         if(compress) {
-            compressedStream =  new PGPCompressedDataGenerator(ZIP_ALGORITHM)
+            compressedDataGenerator = new PGPCompressedDataGenerator(ZIP_ALGORITHM);
+            compressedStream =  compressedDataGenerator
                                 .open(encryptedStream, new byte[BUFFER_SIZE]);
             signatureGenerator.generateOnePassVersion(true)
                     .encode(compressedStream);
-            finalOutputStream = new PGPLiteralDataGenerator()
+            literalOutputStream = literalDataGenerator
                     .open(compressedStream, FILE_TYPE,
                             signedFile, new Date(file.lastModified()),
                             new byte[BUFFER_SIZE]);
@@ -454,22 +456,26 @@ public class PGP
             PGPUtil.writeFileToLiteralData(encryptedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
         }
 
-        finalOutputStream.write(fileBytes, 0, fileBytes.length);
-        signatureGenerator.update(fileBytes);
+        literalOutputStream.write(fileBytes, 0, fileBytes.length);
+        signatureGenerator.update(fileBytes, 0, fileBytes.length);
 
-        finalOutputStream.flush();
-        finalOutputStream.close();
+        literalOutputStream.flush();
+        literalOutputStream.close();
+        literalDataGenerator.close();
+
+        signatureGenerator.generate().encode(literalOutputStream);
+
         if(compress) {
-            signatureGenerator.generate().encode(compressedStream);
-        } else {
-            signatureGenerator.generate().encode(encryptedStream);
+            compressedDataGenerator.close();
+            compressedStream.flush();
+            compressedStream.close();
         }
 
-        compressedStream.flush();
-        compressedStream.close();
+        encryptedDataGenerator.close();
 
         encryptedStream.flush();
         encryptedStream.close();
+
 
         outputStream.flush();
         outputStream.close();

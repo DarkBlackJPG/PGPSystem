@@ -59,7 +59,7 @@ class PGP_test {
 //            System.out.println();
 //            //////////////////////////ENCRYPTION//////////////////////////////////////
 //            fileName = PGP.encryptFile(file, new PGPPublicKey[]{publicKey},
-//                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, false);
+//                    SymmetricKeyAlgorithmTags.TRIPLE_DES, true, true);
 //            input = new FileInputStream(fileName);
 //            System.out.println("Encrypted file:");
 //            System.out.println("===================================================");
