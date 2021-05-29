@@ -37,11 +37,94 @@ import org.bouncycastle.util.io.Streams;
  */
 @Deprecated
 public class PGPEncrytionUtil {
+
+   /* using System;
+    using System.IO;
+    using Org.BouncyCastle.Bcpg;
+    using Org.BouncyCastle.Bcpg.OpenPgp;
+    using Org.BouncyCastle.Security;
+
+    namespace PgpCrypto
+    {
+        public class PgpProcessor
+        {
+            public void SignAndEncryptFile(string actualFileName, string embeddedFileName,
+                                           Stream keyIn, long keyId, Stream outputStream,
+                                           char[] password, bool armor, bool withIntegrityCheck, PgpPublicKey encKey)
+            {
+            const int BUFFER_SIZE = 1 << 16; // should always be power of 2
+
+                if (armor)
+                    outputStream = new ArmoredOutputStream(outputStream);
+
+                // Init encrypted data generator
+                PgpEncryptedDataGenerator encryptedDataGenerator =
+                        new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityCheck, new SecureRandom());
+                encryptedDataGenerator.AddMethod(encKey);
+                Stream encryptedOut = encryptedDataGenerator.Open(outputStream, new byte&#91;BUFFER_SIZE&#93;);
+
+                // Init compression
+                PgpCompressedDataGenerator compressedDataGenerator = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
+                Stream compressedOut = compressedDataGenerator.Open(encryptedOut);
+
+                // Init signature
+                PgpSecretKeyRingBundle pgpSecBundle = new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(keyIn));
+                PgpSecretKey pgpSecKey = pgpSecBundle.GetSecretKey(keyId);
+                if (pgpSecKey == null)
+                    throw new ArgumentException(keyId.ToString("X") + " could not be found in specified key ring bundle.", "keyId");
+                PgpPrivateKey pgpPrivKey = pgpSecKey.ExtractPrivateKey(password);
+                PgpSignatureGenerator signatureGenerator = new PgpSignatureGenerator(pgpSecKey.PublicKey.Algorithm, HashAlgorithmTag.Sha1);
+                signatureGenerator.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
+                foreach (string userId in pgpSecKey.PublicKey.GetUserIds())
+                {
+                    PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
+                    spGen.SetSignerUserId(false, userId);
+                    signatureGenerator.SetHashedSubpackets(spGen.Generate());
+                    // Just the first one!
+                    break;
+                }
+                signatureGenerator.GenerateOnePassVersion(false).Encode(compressedOut);
+
+                // Create the Literal Data generator output stream
+                PgpLiteralDataGenerator literalDataGenerator = new PgpLiteralDataGenerator();
+                FileInfo embeddedFile = new FileInfo(embeddedFileName);
+                FileInfo actualFile = new FileInfo(actualFileName);
+                // TODO: Use lastwritetime from source file
+                Stream literalOut = literalDataGenerator.Open(compressedOut, PgpLiteralData.Binary,
+                        embeddedFile.Name, actualFile.LastWriteTime, new byte&#91;BUFFER_SIZE&#93;);
+
+                // Open the input file
+                FileStream inputStream = actualFile.OpenRead();
+
+                byte&#91;&#93; buf = new byte&#91;BUFFER_SIZE&#93;;
+                int len;
+                while ((len = inputStream.Read(buf, 0, buf.Length)) > 0)
+                {
+                    literalOut.Write(buf, 0, len);
+                    signatureGenerator.Update(buf, 0, len);
+                }
+
+                literalOut.Close();
+                literalDataGenerator.Close();
+                signatureGenerator.Generate().Encode(compressedOut);
+                compressedOut.Close();
+                compressedDataGenerator.Close();
+                encryptedOut.Close();
+                encryptedDataGenerator.Close();
+                inputStream.Close();
+
+                if (armor)
+                    outputStream.Close();
+            }
+        }
+    }*/
     public static void signEncryptMessage(InputStream in, OutputStream out, PGPPublicKey publicKey, PGPPrivateKey secretKey, SecureRandom rand) throws Exception {
         out = new ArmoredOutputStream(out);
 
         PGPEncryptedDataGenerator encryptedDataGenerator = new PGPEncryptedDataGenerator(
-                new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_256).setWithIntegrityPacket(true).setSecureRandom(rand));
+                new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_256)
+                        .setWithIntegrityPacket(true)
+                        .setSecureRandom(rand));
         encryptedDataGenerator.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(publicKey));
 
         OutputStream compressedOut = new PGPCompressedDataGenerator(PGPCompressedData.ZIP)
@@ -168,5 +251,5 @@ public class PGPEncrytionUtil {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }//*/
 }

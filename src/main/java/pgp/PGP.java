@@ -32,6 +32,7 @@ public class PGP
     private static final int HASH_TYPE = HashAlgorithmTags.SHA1;
     private static final int ZIP_ALGORITHM = PGPCompressedData.ZIP;
     private static final Logger logger = Logger.getLogger(PGP.class);
+    private static final int BUFFER_SIZE = 256;
 
     static {
         BasicConfigurator.configure();
@@ -345,7 +346,6 @@ public class PGP
             signatureGenerator.generateOnePassVersion(false)
                               .encode(outputStream);
         }
-        // one pass header associated with the current signature
 
         File file = new File(fileToSign);
         PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
@@ -361,7 +361,6 @@ public class PGP
         }
         FileInputStream fileInputStream = new FileInputStream(file);
         byte[] fileBytes = fileInputStream.readAllBytes();
-        System.out.println(new String(fileBytes));
 
         signedOutputStream.write(fileBytes);
         signatureGenerator.update(fileBytes);
@@ -383,6 +382,7 @@ public class PGP
 
     public static String signAndEncrypt(String fileToSign,
                                         PGPPrivateKey privateKey,
+                                        PGPPublicKey publicKey,
                                         PGPPublicKey[] publicKeys,
                                         int algorithm,
                                         boolean radix64,
@@ -406,8 +406,8 @@ public class PGP
                         .setProvider(PROVIDER));
 
         // Add all recipients who will be able to see this message
-        for (PGPPublicKey publicKey: publicKeys) {
-            encryptedDataGenerator.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(publicKey)
+        for (PGPPublicKey pKey: publicKeys) {
+            encryptedDataGenerator.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(pKey)
                     .setProvider(PROVIDER));
         }
         logger.info("public keys added");
@@ -422,7 +422,7 @@ public class PGP
 
         signatureGenerator.init(SIGNATURE_TYPE, privateKey);
 
-        Iterator<String> it = publicKeys[0].getUserIDs();
+        Iterator<String> it = publicKey.getUserIDs();
         if (it.hasNext()) {
             PGPSignatureSubpacketGenerator signatureSubpacketGenerator = new PGPSignatureSubpacketGenerator();
             signatureSubpacketGenerator.addSignerUserID(false, it.next());
@@ -431,44 +431,37 @@ public class PGP
 
 
         OutputStream compressedStream = null;
-        OutputStream finalOut = null;
         File file = new File(signedFile);
         FileInputStream fileInputStream = new FileInputStream(file);
         byte[] fileBytes = fileInputStream.readAllBytes();
+        OutputStream encryptedStream = encryptedDataGenerator
+                                            .open(outputStream, new byte[BUFFER_SIZE]);
         // Stream with which encrypted data is written to an output stream
         if(compress) {
-            byte[] bytes = PGPutil.compressFile(fileToSign);
-
-            compressedStream =  new BCPGOutputStream(new PGPCompressedDataGenerator(ZIP_ALGORITHM)
-                                .open(encryptedDataGenerator.open(outputStream, bytes.length)));
+            compressedStream =  new PGPCompressedDataGenerator(ZIP_ALGORITHM)
+                                .open(encryptedStream);
             signatureGenerator.generateOnePassVersion(false)
                     .encode(compressedStream);
-            finalOut = new PGPLiteralDataGenerator()
-                    .open(compressedStream, FILE_TYPE, file);
+            PGPUtil.writeFileToLiteralData(compressedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
             logger.info("file compressed");
         } else {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            PGPUtil.writeFileToLiteralData(byteArrayOutputStream, FILE_TYPE, file);
-
-            encryptedDataGenerator.open(outputStream, byteArrayOutputStream.toByteArray().length);
             signatureGenerator.generateOnePassVersion(false)
-                    .encode(outputStream);
-            finalOut = new PGPLiteralDataGenerator()
-                    .open(outputStream, FILE_TYPE, file);
+                    .encode(encryptedStream);
+            PGPUtil.writeFileToLiteralData(encryptedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
         }
-        finalOut.write(fileBytes);
-        signatureGenerator.update(fileBytes);
 
+        signatureGenerator.update(fileBytes);
         if(compress) {
             signatureGenerator.generate().encode(compressedStream);
-            compressedStream.flush();
-            compressedStream.close();
         } else {
-            signatureGenerator.generate().encode(outputStream);
+            signatureGenerator.generate().encode(encryptedStream);
         }
 
+        encryptedStream.flush();
+        encryptedStream.close();
 
-        encryptedDataGenerator.close();
+        compressedStream.flush();
+        compressedStream.close();
 
         outputStream.flush();
         outputStream.close();
@@ -489,13 +482,16 @@ public class PGP
         PGPObjectFactory pgpObjects = new PGPObjectFactory(PGPUtil.getDecoderStream(fileInput),
                 new JcaKeyFingerprintCalculator());
         Object object = pgpObjects.nextObject();
-        PGPEncryptedDataList encryptedData;
-
+        PGPEncryptedDataList encryptedData = null;
+        PGPOnePassSignatureList onePassSignatureList = null;
         if (object instanceof PGPMarker) {
             encryptedData = (PGPEncryptedDataList) pgpObjects.nextObject();
-        } else {
+        } else if (object instanceof PGPEncryptedDataList) {
             encryptedData = (PGPEncryptedDataList) object;
+        } else {
+            throw new  PGPException("message unknown message type. bad start");
         }
+
         PGPSecretKeyRingCollection secretKeyRingCollection = new PGPSecretKeyRingCollection(
                 PGPUtil.getDecoderStream(secretKeyInput), new JcaKeyFingerprintCalculator());
 
@@ -528,7 +524,6 @@ public class PGP
         object = pgpObjects.nextObject();
 
 
-        PGPOnePassSignatureList onePassSignatureList = null;
         PGPSignatureList signatureList = null;
         PGPLiteralData literalData = null;
         byte[] bytes = null;
