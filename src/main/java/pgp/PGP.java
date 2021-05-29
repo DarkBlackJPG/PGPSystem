@@ -1,28 +1,25 @@
 package pgp;
 
-import java.io.*;
-import java.security.*;
-import java.util.Date;
-import java.util.Iterator;
-
-import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.bouncycastle.bcpg.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
-import org.bouncycastle.openpgp.operator.PGPContentSigner;
-import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
-import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 import org.bouncycastle.util.io.Streams;
 import utility.PGPutil;
 
+import java.io.*;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.SignatureException;
+import java.util.Date;
+import java.util.Iterator;
+
 /**
- * Unique class with static methods for encryption, decryption, signing and verification
+ * Class with static methods for encryption, decryption, signing and verification.
+ * As well as signing + encryption and decryption + verification.
  */
 public class PGP
 {
@@ -380,6 +377,21 @@ public class PGP
         return fileName;
     }
 
+    /**
+     * Sign file with provided private key and encrypt the file based on preferences
+     *
+     * @param fileToSign name of the signed {@link File} to sign
+     * @param privateKey {@link PGPPrivateKey} used to sign the file
+     * @param publicKey {@link PGPPublicKey} used to sign the file
+     * @param publicKeys  array of {@link PGPPublicKey} which you wish to encrypt the data with
+     * @param algorithm  algorithm to be used for encryption {@link SymmetricKeyAlgorithmTags}
+     * @param radix64 if true encrypted data will be encoded with {@link ArmoredOutputStream}
+     * @param compress  if true data will be compressed before encryption using
+     *                      {@code ZIP} algorithm {@link CompressionAlgorithmTags}
+     * @return {@code String} name of signed and encrypted {@link File}
+     * @throws IOException
+     * @throws PGPException
+     */
     public static String signAndEncrypt(String fileToSign,
                                         PGPPrivateKey privateKey,
                                         PGPPublicKey publicKey,
@@ -453,7 +465,11 @@ public class PGP
         } else {
             signatureGenerator.generateOnePassVersion(true)
                     .encode(encryptedStream);
-            PGPUtil.writeFileToLiteralData(encryptedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
+            literalOutputStream = literalDataGenerator
+                    .open(encryptedStream, FILE_TYPE,
+                            signedFile, new Date(file.lastModified()),
+                            new byte[BUFFER_SIZE]);
+//            PGPUtil.writeFileToLiteralData(encryptedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
         }
 
         literalOutputStream.write(fileBytes, 0, fileBytes.length);
@@ -466,12 +482,12 @@ public class PGP
         signatureGenerator.generate().encode(literalOutputStream);
 
         if(compress) {
-            compressedDataGenerator.close();
+//            compressedDataGenerator.close();
             compressedStream.flush();
             compressedStream.close();
         }
 
-        encryptedDataGenerator.close();
+//        encryptedDataGenerator.close();
 
         encryptedStream.flush();
         encryptedStream.close();
@@ -483,6 +499,18 @@ public class PGP
         return signedFile;
     }
 
+    /**
+     *  Decrypt file with given name and verify its signatures
+     *
+     * @param inputFileName {@code String} for the file to be decrypted
+     * @param secretKeyFileName {@code String} for the secret key to be found
+     * @param publicKeyFileName {@code String} for the public key to be found
+     * @param passphrase {@code String} used to decode the {@link PGPSecretKey}
+     * @return {@code boolean} true if file verified
+     * @throws IOException
+     * @throws PGPException
+     * @throws SignatureException
+     */
     public static boolean decryptAndVerify(String inputFileName,
                                            String secretKeyFileName,
                                            String publicKeyFileName,
