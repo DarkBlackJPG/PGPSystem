@@ -431,9 +431,9 @@ public class PGP
 
 
         OutputStream compressedStream = null;
+        OutputStream finalOutputStream = null;
         File file = new File(fileToSign);
-        FileInputStream fileInputStream = new FileInputStream(file);
-        byte[] fileBytes = fileInputStream.readAllBytes();
+        byte[] fileBytes = new FileInputStream(file).readAllBytes();
         OutputStream encryptedStream = encryptedDataGenerator
                                             .open(outputStream, new byte[BUFFER_SIZE]);
         // Stream with which encrypted data is written to an output stream
@@ -442,7 +442,11 @@ public class PGP
                                 .open(encryptedStream);
             signatureGenerator.generateOnePassVersion(false)
                     .encode(compressedStream);
-            PGPUtil.writeFileToLiteralData(compressedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
+            finalOutputStream = new PGPLiteralDataGenerator()
+                    .open(compressedStream, FILE_TYPE,
+                            signedFile, new Date(file.lastModified()),
+                            new byte[BUFFER_SIZE]);
+//            PGPUtil.writeFileToLiteralData(compressedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
             logger.info("file compressed");
         } else {
             signatureGenerator.generateOnePassVersion(false)
@@ -450,22 +454,25 @@ public class PGP
             PGPUtil.writeFileToLiteralData(encryptedStream, FILE_TYPE, file, new byte[BUFFER_SIZE]);
         }
 
+        finalOutputStream.write(fileBytes, 0, fileBytes.length);
         signatureGenerator.update(fileBytes);
+
+        finalOutputStream.flush();
+        finalOutputStream.close();
         if(compress) {
             signatureGenerator.generate().encode(compressedStream);
         } else {
             signatureGenerator.generate().encode(encryptedStream);
         }
 
-        encryptedStream.flush();
-        encryptedStream.close();
-
         compressedStream.flush();
         compressedStream.close();
 
+        encryptedStream.flush();
+        encryptedStream.close();
+
         outputStream.flush();
         outputStream.close();
-
         logger.info("file " + fileToSign + " signed and encrypted");
         return signedFile;
     }
@@ -531,9 +538,9 @@ public class PGP
         while (object != null) {
             if (object instanceof PGPCompressedData) {
                 PGPCompressedData compressedData = (PGPCompressedData) object;
-                PGPObjectFactory decompressedObjects = new PGPObjectFactory(compressedData.getDataStream(),
+                pgpObjects = new PGPObjectFactory(compressedData.getDataStream(),
                         new JcaKeyFingerprintCalculator());
-                object = decompressedObjects.nextObject();
+                object = pgpObjects.nextObject();
             }
 
             if (object instanceof PGPLiteralData) {
