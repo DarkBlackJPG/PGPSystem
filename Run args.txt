@@ -1,0 +1,15 @@
+Running args for
+            org.bouncycastle.openpgp.examplesKeyBasedFileProcessor
+Encryption
+-e -ai C:\Users\Korisnik\IdeaProjects\PGPSystem\EncryptionTest.txt C:\Users\Korisnik\IdeaProjects\PGPSystem\system_publicKeys.pkr
+
+Decryption
+-d C:\Users\Korisnik\IdeaProjects\PGPSystem\EncryptionTest.txt.asc C:\Users\Korisnik\IdeaProjects\PGPSystem\system_secretKeys.skr pwd
+
+Running args for
+            org.bouncycastle.openpgp.examplesKeyBasedFileProcessor
+Sign
+-s -a C:\Users\Korisnik\IdeaProjects\PGPSystem\EncryptionTest.txt C:\Users\Korisnik\IdeaProjects\PGPSystem\system_secretKeys.skr pwd
+
+Verify
+-v C:\Users\Korisnik\IdeaProjects\PGPSystem\EncryptionTest.txt.asc C:\Users\Korisnik\IdeaProjects\PGPSystem\system_publicKeys.pkr

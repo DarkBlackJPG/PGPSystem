@@ -16,6 +16,10 @@
     <orderEntry type="library" name="javafx-swt" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-base:12" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-base:win:12" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcpg-jdk15on:1.68" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.68" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.68" level="project" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.8.0" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-controls:12" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-controls:win:12" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-graphics:12" level="project" />
@@ -28,5 +32,8 @@
     <orderEntry type="library" name="Maven: org.openjfx:javafx-media:win:12" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-swing:12" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-swing:win:12" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ant:ant:1.10.10" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ant:ant-launcher:1.10.10" level="project" />
+    <orderEntry type="library" name="Maven: log4j:log4j:1.2.17" level="project" />
   </component>
 </module>
