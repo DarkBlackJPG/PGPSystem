@@ -52,7 +52,8 @@
                       <Button fx:id="saveDecryptionFileLocationButton" layoutX="210.0" layoutY="334.0" mnemonicParsing="false" onAction="#chooseDecryptionFileLocation" text="Save file location" />
                       <TextField fx:id="decryptionFileLocationTextField" layoutX="328.0" layoutY="334.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
                       <Button fx:id="saveDecryptionFileButton" layoutX="210.0" layoutY="385.0" mnemonicParsing="false" onAction="#saveDecryptedFIle" prefHeight="25.0" prefWidth="373.0" text="Save" />
-                  </children></AnchorPane>
+                  </children>
+              </AnchorPane>
             </content>
           </Tab>
             <Tab text="Export Keys">
@@ -64,7 +65,8 @@
                         <Button fx:id="executeExportKeyButton" layoutX="242.0" layoutY="319.0" mnemonicParsing="false" onAction="#executeExportKey" prefHeight="25.0" prefWidth="332.0" text="Export" />
                         <ComboBox fx:id="exportKeyChoiceCombobox" layoutX="319.0" layoutY="275.0" onAction="#keyChoiceComboboxAction" prefHeight="25.0" prefWidth="258.0" promptText="Choose key" />
                         <Label layoutX="224.0" layoutY="279.0" text="Key to export" />
-                    </children></AnchorPane>
+                    </children>
+                </AnchorPane>
               </content>
             </Tab>
             <Tab text="Import keys">
@@ -117,7 +119,8 @@
                                 </ContextMenu>
                             </contextMenu>
                         </TableView>
-                    </children></AnchorPane>
+                    </children>
+                </AnchorPane>
               </content>
             </Tab>
             <Tab text="Generate new keypair">

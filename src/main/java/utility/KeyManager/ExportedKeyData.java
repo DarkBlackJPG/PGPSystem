@@ -1,4 +1,4 @@
-package sample;
+package utility.KeyManager;
 
 import java.util.Date;
 
@@ -52,6 +52,10 @@ public class ExportedKeyData {
 
     public long getKeyID() {
         return keyID;
+    }
+
+    public String getKeyIDHex() {
+        return Long.toHexString(keyID).toUpperCase();
     }
 
     public void setKeyID(long keyID) {

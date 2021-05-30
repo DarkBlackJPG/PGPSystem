@@ -1,6 +1,6 @@
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
-import utility.ExportedKeyData;
+import utility.KeyManager.ExportedKeyData;
 import utility.KeyManager.KeyringManager;
 import utility.RSA;
 

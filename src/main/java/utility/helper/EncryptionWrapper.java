@@ -1,7 +1,7 @@
-package sample;
+package utility.helper;
 
 public class EncryptionWrapper {
-    private ExportedKeyData element;
+    private utility.KeyManager.ExportedKeyData element;
     private boolean isSelected;
 
     public String getUserName() {
@@ -11,16 +11,19 @@ public class EncryptionWrapper {
     public long getKeyID() {
         return  element.getKeyID();
     }
+    public String getKeyIDHex() {
+        return  Long.toHexString(element.getKeyID()).toUpperCase();
+    }
 
     public String getEmail() {
         return element.getEmail();
     }
 
-    public ExportedKeyData getElement() {
+    public utility.KeyManager.ExportedKeyData getElement() {
         return element;
     }
 
-    public void setElement(ExportedKeyData element) {
+    public void setElement(utility.KeyManager.ExportedKeyData element) {
         this.element = element;
     }
 

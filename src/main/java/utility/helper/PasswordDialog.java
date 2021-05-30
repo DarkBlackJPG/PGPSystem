@@ -1,4 +1,4 @@
-package sample;
+package utility.helper;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -14,12 +14,15 @@ import javafx.scene.layout.Priority;
  */
 public class PasswordDialog extends Dialog<String> {
     private PasswordField passwordField;
-
+    private String headerText;
     public PasswordDialog() {
+        this("Please enter your password.");
+    }
+    public PasswordDialog(String headerText) {
         setTitle("Password");
-        setHeaderText("Please enter your password.");
+        setHeaderText(headerText);
 
-        ButtonType passwordButtonType = new ButtonType("Decrypt", ButtonData.OK_DONE);
+        ButtonType passwordButtonType = new ButtonType("Confirm input", ButtonData.OK_DONE);
         getDialogPane().getButtonTypes().addAll(passwordButtonType, ButtonType.CANCEL);
 
         passwordField = new PasswordField();

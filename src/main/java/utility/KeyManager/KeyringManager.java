@@ -2,10 +2,8 @@ package utility.KeyManager;
 
 import ExceptionPackage.IncorrectKeyException;
 import ExceptionPackage.KeyNotFoundException;
-import org.apache.log4j.Logger;
 import org.apache.tools.ant.DirectoryScanner;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -16,7 +14,6 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
-import utility.ExportedKeyData;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -87,7 +84,7 @@ public class KeyringManager implements Keyring {
     }
 
     @Override
-    public void importSecretKeyring(InputStream inputStream) throws IOException, PGPException {
+    public ExportedKeyData importSecretKeyring(InputStream inputStream) throws IOException, PGPException {
         inputStream = PGPUtil.getDecoderStream(inputStream);
         PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(inputStream, new BcKeyFingerprintCalculator());
         Iterator<PGPSecretKeyRing> keyRings = pgpSec.getKeyRings();
@@ -97,10 +94,13 @@ public class KeyringManager implements Keyring {
         publicKeys.add(newSecretKey.getPublicKey());
         PGPPublicKeyRing pgpPublicKeyRing = new PGPPublicKeyRing(publicKeys);
         addPublicKey(pgpPublicKeyRing);
+        ExportedKeyData keyData = extractDataFromKey(pgpPublicKeyRing);
+        keyData.setMasterKey(true);
+        return keyData;
     }
 
     @Override
-    public void makeKeyPairs(PGPKeyPair masterKey, PGPKeyPair subKey, String username, String email, String password) throws PGPException, IOException {
+    public ExportedKeyData makeKeyPairs(PGPKeyPair masterKey, PGPKeyPair subKey, String username, String email, String password) throws PGPException, IOException {
 
         PGPSignatureSubpacketGenerator signHashGen = new PGPSignatureSubpacketGenerator();
         signHashGen.setKeyFlags(false, KeyFlags.SIGN_DATA | KeyFlags.CERTIFY_OTHER);
@@ -137,6 +137,11 @@ public class KeyringManager implements Keyring {
 
         // Cuva na root
         saveKeys("system_publicKeys.pkr", "system_secretKeys.skr");
+
+        ExportedKeyData data = extractDataFromKey(secretKeys);
+        data.setMasterKey(true);
+        return data;
+
     }
 
     /**
@@ -146,14 +151,16 @@ public class KeyringManager implements Keyring {
      * @see <a href="https://stackoverflow.com/questions/28444819/getting-bouncycastle-to-decrypt-a-gpg-encrypted-message">
      * Odavde je preuzet kod za dekriptovanje
      * </a>
+     * @return
      */
     @Override
-    public void importPublicKeyring(InputStream inputStream) throws IOException, PGPException {
+    public ExportedKeyData importPublicKeyring(InputStream inputStream) throws IOException, PGPException {
         inputStream = PGPUtil.getDecoderStream(inputStream);
         PGPPublicKeyRingCollection pgpSec = new PGPPublicKeyRingCollection(inputStream, new BcKeyFingerprintCalculator());
         Iterator<PGPPublicKeyRing> keyRings = pgpSec.getKeyRings();
         PGPPublicKeyRing newPublicKey = keyRings.next();
         addPublicKey(newPublicKey);
+        return extractDataFromKey(newPublicKey);
     }
 
     @Override
@@ -325,7 +332,6 @@ public class KeyringManager implements Keyring {
         ArrayList<ExportedKeyData> data = new ArrayList<>();
 
         publicKeys.forEachRemaining(pgpPublicKeys -> {
-
             data.add(extractDataFromKey(pgpPublicKeys));
         });
         secretKeys.forEachRemaining(pgpSecretKeys -> {
@@ -355,6 +361,11 @@ public class KeyringManager implements Keyring {
         armorOut.flush();
         armorOut.close();
         outputStream.close();
+    }
+
+    @Override
+    public void saveKeys() throws IOException {
+        saveKeys(publicKeyRings, secretKeyRings, publicKeyFile, privateKeyFile);
     }
 
     @Override

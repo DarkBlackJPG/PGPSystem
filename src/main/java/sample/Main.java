@@ -6,12 +6,15 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import utility.KeyManager.KeyringManager;
 import utility.RSA;
+
+import java.io.IOException;
 
 public class Main extends Application {
     // Sluzi da mozemo da otvorimo file explorer u controlleru, zahteva stage
     static Main mainReference;
-    // TODO [INTEGRACIJA] static KeyManager keyManagerReference;
+    static KeyringManager keyManagerReference;
     Stage currentStage;
 
     @Override
@@ -28,8 +31,12 @@ public class Main extends Application {
     }
 
     @Override
-    public void stop() {
-        // TODO [INTEGRACIJA] keyManagerReference.saveKeys();
+    public void stop()  {
+        try {
+            keyManagerReference.saveKeys();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

@@ -1,5 +1,7 @@
 package sample;
 
+import ExceptionPackage.IncorrectKeyException;
+import ExceptionPackage.KeyNotFoundException;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -13,9 +15,19 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import utility.KeyManager.KeyringManager;
+import utility.RSA;
+import utility.helper.EncryptionWrapper;
+import utility.KeyManager.ExportedKeyData;
+import utility.helper.PasswordDialog;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -111,33 +123,13 @@ public class Controller {
     private List<String> asymmetricAlgorithms = new ArrayList<>();
     private ObservableList<ExportedKeyData> allKeys = FXCollections.observableArrayList();
 
-    // TODO [INTEGRACIJA] KeyManager keyManager;
-
-    /**
-     * TODO [INTEGRACIJA] Izbrisati definiciju enuma, korisiti vec implementiranu u RSA.java klasi
-     * <p>
-     * Mock za vec implementiranu klasu
-     */
-    private enum KeySizes {
-        RSA1024(1024),
-        RSA2048(2048),
-        RSA4096(4096);
-
-        private final int keySize;
-
-        KeySizes(int keySize) {
-            this.keySize = keySize;
-        }
-
-        public int getKeySize() {
-            return this.keySize;
-        }
-    }
+    KeyringManager keyManager;
+    
 
     // Sluzi za parsiranje stringa prilikom odabira iz choice box-a za novi tajni kljuc
-    private HashMap<String, KeySizes> rsaKeySizesHashMap = new HashMap<>();
+    private HashMap<String, RSA.KeySizes> rsaKeySizesHashMap = new HashMap<>();
 
-    private HashMap<String, Integer> symmetricAlgorithmsHashMap = new HashMap<String, Integer>();
+    private HashMap<String, Integer> symmetricAlgorithmsHashMap = new HashMap<>();
 
 
     // Inicijalizacija neophodnih struktura podataka za ispis u FX komponente
@@ -159,14 +151,19 @@ public class Controller {
         asymmetricAlgorithms.add(rsa2048);
         asymmetricAlgorithms.add(rsa4096);
 
-        rsaKeySizesHashMap.put(rsa1024, KeySizes.RSA1024);
-        rsaKeySizesHashMap.put(rsa2048, KeySizes.RSA2048);
-        rsaKeySizesHashMap.put(rsa4096, KeySizes.RSA4096);
+        rsaKeySizesHashMap.put(rsa1024, RSA.KeySizes.RSA1024);
+        rsaKeySizesHashMap.put(rsa2048, RSA.KeySizes.RSA2048);
+        rsaKeySizesHashMap.put(rsa4096, RSA.KeySizes.RSA4096);
 
-        /**
-         * TODO [INTEGRACIJA] keyManager = new KeyManager();
-         * TODO [INTEGRACIJA] Main.keyManagerReference = keyManager;
-         */
+        try {
+            keyManager = new KeyringManager();
+            Main.keyManagerReference = keyManager;
+        } catch (Exception e) {
+            showErrorDialog("Error encountered",
+                    "Error trying to open keyring files",
+                    e.getMessage() + "\n Try opening the application again.");
+        }
+
 
     }
 
@@ -181,7 +178,7 @@ public class Controller {
         newKeyPairAlgorithm.setItems(FXCollections.observableList(asymmetricAlgorithms));
 
         // Koristimo observable list da automatski azuriramo podatke kada se desi neka promena
-        // TODO [INTEGRACIJA] Testirati ovaj Listener
+        // [INTEGRACIJA] Testirati ovaj Listener -- Trebalo bi da radi
         // Ovo je implementacija Observer patterna, tu registrujemo sve koji posmatraju promenu i azuriramo podatke
         allKeys.addListener((ListChangeListener<? super ExportedKeyData>) change -> {
             certificateTableTableView.getItems().clear();
@@ -202,26 +199,23 @@ public class Controller {
         });
 
         /**
-         * TODO [INTEGRACIJA] Tu treba da stoji logika za dohvatanje svih kljuceva u sistemu radi ispisa, za sad samo dummy
+         * TODO [INTEGRACIJA] Tu treba da stoji logika za dohvatanje svih kljuceva - Uradjeno [TESTIRATI]
          */
-        ExportedKeyData dummyData = new ExportedKeyData();
-        dummyData.setEmail("stefant@98.com");
-        dummyData.setUserName("Stefan Teslic");
-        dummyData.setKeyID(123123123);
-        dummyData.setValidFrom(new Date());
-        dummyData.setValidUntil(new Date(2022, 12, 12));
-        dummyData.setMasterKey(true);
-        addKeyToAllKeys(dummyData);
+        ArrayList<ExportedKeyData> exportedKeyData = keyManager.generatePublicKeyList();
+        for (ExportedKeyData element :
+                exportedKeyData) {
+            addKeyToAllKeys(element);
+        }
 
         // Referencirati ovu metodu
         createCertificatesListView();
 
-        // TODO [INTEGRACIJA] Dodati sve kljuceve u for-petlji --- Mozda ima addALL?
+        // TODO? [INTEGRACIJA] Dodati sve kljuceve u for-petlji --- Mozda ima addALL? - [POTENCIJALNO NE TREBA]
 
         // Referencirati metodu
         initializePublicKeyEncryptionKeys();
 
-        // TODO [INTEGRACIJA] Za sve kljuceve KOJI SU PUBLIC (potrebna isMaster provera, a sta ako sifrujemo za neki drugi nas privatni kljuc? mozda ne treba provera). Treba napraviti Wrapper objekat i staviti false na sve!!!
+        // TODO? [INTEGRACIJA] Za sve kljuceve KOJI SU PUBLIC (potrebna isMaster provera, a sta ako sifrujemo za neki drugi nas privatni kljuc? mozda ne treba provera). Treba napraviti Wrapper objekat i staviti false na sve!!!  - [POTENCIJALNO NE TREBA]
         /**
          * Wrapper objekat je da bi checkbox radio!!!
          */
@@ -232,7 +226,7 @@ public class Controller {
 //        publicKeyEncryptionChoiceTableView.getItems().add(ew);
 
 
-        // TODO [INTEGRACIJA] Tu treba popuniti takodje i ostale choiceBox-ove gde mozemo da biramo kljuceve
+        // TODO? [INTEGRACIJA] Tu treba popuniti takodje i ostale choiceBox-ove gde mozemo da biramo kljuceve  - [POTENCIJALNO NE TREBA]
     }
 
     private void removeKeyFromObservableKeyCollection(ExportedKeyData keyData) {
@@ -253,7 +247,7 @@ public class Controller {
      * @param selection
      * @return
      */
-    private KeySizes parseRSAAlgorithmSelection(String selection) {
+    private RSA.KeySizes parseRSAAlgorithmSelection(String selection) {
         return rsaKeySizesHashMap.get(selection);
     }
 
@@ -267,16 +261,21 @@ public class Controller {
         return symmetricAlgorithmsHashMap.get(selection);
     }
 
-    // TODO [INTEGRACIJA] implementirati metodu za dobijanje kljuca iz potpisa, potipis ima informaciju o KEYID
-    private Object parseSignatureSelectionToKey(String signature) {
+    // TODO [INTEGRACIJA] implementirati metodu za dobijanje kljuca iz potpisa, potipis ima informaciju o KEYID -- Secret ili public???
+    private PGPSecretKey parseSignatureSelectionToKey(String signature) {
         String[] elements = signature.split(", ");
         String userName = elements[0];
         String email = elements[1];
-        String keyID = elements[2];
+        BigInteger keyID = new BigInteger(elements[2], 16);
 
         // TODO [INTEGRACIJA] Pretraga trazenog kljuca, vracanje istog;
         // --------| CODE GOES HERE
-        // ....
+        try {
+            PGPSecretKey pgpSecretKey = keyManager.getSecretKeyById(keyID.longValue());
+            return pgpSecretKey;
+        } catch (PGPException e) {
+            showErrorDialog("Error getting key", "Error encountered while searching for key with ID " + keyID, e.getMessage());
+        }
         // --------|
 
         return null;
@@ -293,9 +292,9 @@ public class Controller {
     private String parseExportedKeyDataToChoiceBoxReadableText(ExportedKeyData exportedKeyData) {
         String username = exportedKeyData.getUserName();
         String email = exportedKeyData.getEmail();
-        long keyID = exportedKeyData.getKeyID();
+        String keyID = exportedKeyData.getKeyIDHex();
 
-        return String.format("%s, %s, %d", username, email, keyID);
+        return String.format("%s, %s, %s", username, email, keyID);
 
     }
 
@@ -331,7 +330,7 @@ public class Controller {
         if (sign && signature == null) {
             showErrorDialog("Input parameters are incorrrect!",
                           "Incorrect signature",
-                            "You have to specify for the signature!");
+                            "You have to specify Key for the signature!");
             return;
         }
 
@@ -418,7 +417,7 @@ public class Controller {
         TableColumn validUntil = new TableColumn("Valid Until");
         validUntil.setCellValueFactory(new PropertyValueFactory<>("validUntil"));
         TableColumn keyId = new TableColumn("Key ID");
-        keyId.setCellValueFactory(new PropertyValueFactory<>("keyID"));
+        keyId.setCellValueFactory(new PropertyValueFactory<>("keyIDHex"));
         TableColumn isMaster = new TableColumn("Master Key");
         isMaster.setCellValueFactory(new PropertyValueFactory<>("isMasterKey"));
         certificateTableTableView.getColumns().addAll(nameColumn, emailColumn, validFrom, validUntil, keyId, isMaster);
@@ -450,7 +449,7 @@ public class Controller {
         TableColumn encryptionEmail = new TableColumn("Email");
         encryptionEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         TableColumn encryptionKeyId = new TableColumn("Key ID");
-        encryptionKeyId.setCellValueFactory(new PropertyValueFactory<>("keyID"));
+        encryptionKeyId.setCellValueFactory(new PropertyValueFactory<>("keyIDHex"));
 
         publicKeyEncryptionChoiceTableView.getColumns().addAll(encryptionCheckbox, encryptionName, encryptionEmail, encryptionKeyId);
     }
@@ -483,6 +482,18 @@ public class Controller {
         }
     }
 
+    /**
+     * Elegantan nacin za unos password-a, obavezno koristiti za dekripcije/enkripcije, sta vec
+     *
+     * @return
+     */
+    private String passwordInputDialogBoxWithText(String text) {
+        PasswordDialog pd = new PasswordDialog(text);
+        Optional<String> result = pd.showAndWait();
+        AtomicReference<String> passwordResult = new AtomicReference<>(null);
+        result.ifPresent(password -> passwordResult.set(password));
+        return passwordResult.get();
+    }
     /**
      * Elegantan nacin za unos password-a, obavezno koristiti za dekripcije/enkripcije, sta vec
      *
@@ -589,27 +600,36 @@ public class Controller {
      */
     public void executeExportKey(ActionEvent actionEvent) {
         String destination = exportFileLocationTextField.getText();
-        String key = (String) exportKeyChoiceCombobox.getValue(); // konverzija u ExportedData
+        String signature = (String) exportKeyChoiceCombobox.getValue(); // konverzija u ExportedData
 
-        if (key == null) {
+        if (signature == null) {
             showErrorDialog("Input parameters are incorrrect!", "Incorrect key", "You have to specify the correct key!");
             return;
         }
 
         // TODO [INTEGRACIJA] Obavezno proveriti postojanost kljuca
+        PGPSecretKey secretKey = parseSignatureSelectionToKey(signature);
+
+        if(secretKey == null)
+            return;
 
         if (destination.length() == 0) {
             showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath", "You have to specify the correct filepath!");
             return;
         }
 
-        File outputFile = new File(destination);
+        String fileName = String.format("%s[%s]_%s.asc",
+                secretKey.getUserIDs().next(), Long.toHexString(secretKey.getKeyID()),(new Date().toString().replace(' ', '_')));
+        File outputFile = new File(destination + "/" + fileName);
         try (OutputStream os = new FileOutputStream(outputFile)) {
             outputFile.createNewFile();
             // TODO [INTEGRACIJA] Algoritam za export kljuca
-
-        } catch (IOException e) {
-            e.printStackTrace();
+            keyManager.exportPublicKey(secretKey.getKeyID(), os);
+            showSuccessDialog("Successfully exported key", "Key selection was successfully exported", "The key is located at " + outputFile.getAbsolutePath());
+        }  catch (IOException e) {
+            showErrorDialog("Error while trying to import public key!", "There was an unexpected error with the IO Stream!", e.getMessage());
+        } catch (PGPException e) {
+            showErrorDialog("Error while trying to import public key!", "PGP exception occurred!", e.getMessage());
         }
     }
 
@@ -649,11 +669,19 @@ public class Controller {
             return;
         }
         try (InputStream is = new FileInputStream(file)) {
-            // TODO [INTEGRACIJA] Ovde treba staviti logiku za unos privatnog kljuca, OBAVEZNO NA KRAJU TREBA AZURIRATI SVE KOMPONENTE {jos da skontam kako da napravim observera da to radi hahah}
+            // TODO [INTEGRACIJA] Ovde treba staviti logiku za unos privatnog kljuca -- Uradjeno [Testirati]
+            ExportedKeyData keyData = keyManager.importSecretKeyring(is);
+            addKeyToAllKeys(keyData);
+            showSuccessDialog("Key add success!", "The key was successfully added",
+                    String.format("Secret key for user %s <%s> was successfully imported. Key ID: %s",
+                    keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex()));
+            keyManager.saveKeys();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            showErrorDialog("Error while trying to import public key!", "There was an error with the input stream!", e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            showErrorDialog("Error while trying to import public key!", "There was an unexpected error with the IO Stream!", e.getMessage());
+        } catch (PGPException e) {
+            showErrorDialog("Error while trying to import public key!", "PGP exception occurred!", e.getMessage());
         }
 
     }
@@ -686,11 +714,19 @@ public class Controller {
             return;
         }
         try (InputStream is = new FileInputStream(file)) {
-            // TODO [INTEGRACIJA] Ovde treba staviti logiku za unos javnog kljuca, OBAVEZNO NA KRAJU TREBA AZURIRATI SVE KOMPONENTE {jos da skontam kako da napravim observera da to radi hahah}
+            // TODO [INTEGRACIJA] Ovde treba staviti logiku za unos javnog kljuca - Uradjeno [TESTIRATI]
+            ExportedKeyData keyData = keyManager.importPublicKeyring(is);
+            addKeyToAllKeys(keyData);
+            showSuccessDialog("Key add success!", "The key was successfully added",
+                    String.format("Key for user %s <%s> was successfully imported. Key ID: %s",
+                            keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex()));
+            keyManager.saveKeys();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            showErrorDialog("Error while trying to import public key!", "There was an error with the input stream!", e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            showErrorDialog("Error while trying to import public key!", "There was an unexpected error with the IO Stream!", e.getMessage());
+        } catch (PGPException e) {
+            showErrorDialog("Error while trying to import public key!", "PGP exception occurred!", e.getMessage());
         }
     }
 
@@ -717,7 +753,7 @@ public class Controller {
         String email = newKeyPairEmail.getText();
         String password = newKeyPairPassword.getText();
         String algorithm = (String) newKeyPairAlgorithm.getValue();
-        KeySizes rsaSize = parseRSAAlgorithmSelection(algorithm);
+        RSA.KeySizes rsaSize = parseRSAAlgorithmSelection(algorithm);
         if (name.length() == 0) {
             showErrorDialog("Incorrect parameter input!", "Name input incorrect!", "The name parameter must be non-empty!");
             return;
@@ -738,7 +774,33 @@ public class Controller {
             return;
         }
 
-        // TODO [INTEGRACIJA] Izvrsavanje dodavanja novog kljuca -- OBAVEZNO AZURIRANJE KOMPONENTI
+        // TODO [INTEGRACIJA] Izvrsavanje dodavanja novog kljuca -- Uradjeno [TESTIRATI]
+        if (!showConfirmationDialog("Are you sure?",
+                "Are the values you entered valid?",
+                String.format("- %s\n- %s\n- %s", name, email, algorithm))) {
+        }
+        String reentered = passwordInputDialogBoxWithText("Please reenter your password");
+
+        if (reentered == null)
+            return;
+
+        if (!reentered.equals(password)) {
+            showErrorDialog("Error confirming passwords", "", "Passwords do not match");
+            return;
+        }
+        try {
+        PGPKeyPair masterKey = RSA.RSA_GetUtility()
+                .RSA_SetKeySize(rsaSize)
+                .RSA_PGPKeyGenerator();
+        PGPKeyPair signingKey = RSA.RSA_GetUtility()
+                .RSA_SetKeySize(rsaSize)
+                .RSA_PGPKeyGenerator();
+        ExportedKeyData keyData = keyManager.makeKeyPairs(masterKey, signingKey, name, email, password);
+        addKeyToAllKeys(keyData);
+        showSuccessDialog("Success!", "Key generation was a success!", "The key was successfully generated. The Key ID is: " + keyData.getKeyIDHex());
+        } catch (Exception e) {
+            showErrorDialog("Error!", "An error occured while trying to generate new key-pair", e.getMessage());
+        }
     }
 
     /**
@@ -766,7 +828,26 @@ public class Controller {
     public void contextMenuExportKey(ActionEvent actionEvent) {
         ExportedKeyData keyData = (ExportedKeyData) certificateTableTableView.getSelectionModel().getSelectedItem();
         if (keyData != null) {
-            // TODO [INTEGRACIJA] Obrada za export JAVNOG kljuca iz liste svih sertifikata na desni klik
+            // TODO [INTEGRACIJA] Obrada za export JAVNOG kljuca iz liste svih sertifikata na desni klik -- Uradjeno [TESTIRATI]
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setTitle("Choose where to export");
+            File file = directoryChooser.showDialog(Main.mainReference.currentStage);
+            if (file != null) {
+                String fileName = String.format("%s[%s]_%s_%s.asc",
+                        keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex(),(new Date().toString().replace(' ', '_')));
+                file = new File(file.getAbsolutePath() + "/" + fileName);
+                try {
+                    file.createNewFile();
+                    OutputStream fos = new FileOutputStream(file);
+                    keyManager.exportPublicKey(keyData.getKeyID(), fos);
+                    showSuccessDialog("Export finished successfully!", "The key was successfully exported!",
+                            "The file can be found at: " + file.getAbsolutePath());
+                } catch (IOException | PGPException e) {
+                    showErrorDialog("Error!", "There was an error while trying to export key "+keyData.getKeyIDHex()+"!", e.getMessage());
+                }
+
+
+            }
         }
     }
 
@@ -781,6 +862,30 @@ public class Controller {
         ExportedKeyData keyData = (ExportedKeyData) certificateTableTableView.getSelectionModel().getSelectedItem();
         if (keyData != null) {
             // TODO [INTEGRACIJA] Obrada za delete kljuca iz liste svih sertifikata na desni klik -- OBAVEZNO TU KORISTITI Password Dialog METODU ZA PROVERU PASSWORD AKO JE ISMASTER!!!!
+            if (keyData.getIsMasterKey()) {
+                String password = passwordInputDialogBox();
+                try {
+                    keyManager.removeSecretKey(keyData.getKeyID(), password);
+                    removeKeyFromObservableKeyCollection(keyData);
+                    keyManager.saveKeys();
+                } catch (PGPException e) {
+                    showErrorDialog("Error!", "There was an error while trying to remove key "+keyData.getKeyIDHex()+"!", e.getMessage());
+                } catch (IncorrectKeyException e) {
+                    showErrorDialog("Error!", "Incorrect password!", e.getMessage());
+                } catch (IOException e) {
+                    showErrorDialog("Error!", "Error saving keys!", e.getMessage());
+                }
+            } else {
+                try {
+                    keyManager.removePublicKey(keyData.getKeyID());
+                    removeKeyFromObservableKeyCollection(keyData.getKeyID());
+                    keyManager.saveKeys();
+                } catch (PGPException e) {
+                    showErrorDialog("Error!", "There was an error while trying to remove key "+keyData.getKeyIDHex()+"!", e.getMessage());
+                } catch (IOException e) {
+                    showErrorDialog("Error!", "There was an error while trying to remove key!", e.getMessage());
+                }
+            }
         }
     }
 
@@ -798,7 +903,27 @@ public class Controller {
                 showErrorDialog("Incorrect key selection!", "Cannot backup public key!", "You cant invoke master key backup on public keys!");
                 return;
             } else {
-                // TODO [INTEGRACIJA] Obrada za export TAJNOG kljuca iz liste svih sertifikata na desni klik, obavezno provera password-a
+                // TODO [INTEGRACIJA] Obrada za export TAJNOG kljuca iz liste svih sertifikata na desni klik, obavezno provera password-a - Uradjeno [TESTIRATI]
+                DirectoryChooser directoryChooser = new DirectoryChooser();
+                directoryChooser.setTitle("Choose where to export");
+                File file = directoryChooser.showDialog(Main.mainReference.currentStage);
+                if (file != null) {
+                    String fileName = String.format("%s[%s]_%s_%s_SECRET.asc",
+                            keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex(), (new Date().toString().replace(' ', '_')));
+                    file = new File(file.getAbsolutePath() + "/" + fileName);
+                    try {
+                        file.createNewFile();
+                        OutputStream fos = new FileOutputStream(file);
+                        keyManager.exportSecretKey(keyData.getKeyID(), fos);
+                        showSuccessDialog("Export finished successfully!", "The key was successfully exported!",
+                                "The file can be found at: " + file.getAbsolutePath());
+                    } catch (IOException | PGPException | KeyNotFoundException e) {
+                        showErrorDialog("Error!", "There was an error while trying to export key "+keyData.getKeyIDHex()+"!", e.getMessage());
+                        if (e instanceof KeyNotFoundException) {
+                            removeKeyFromObservableKeyCollection(keyData);
+                        }
+                    }
+                }
             }
         }
     }
@@ -815,7 +940,7 @@ public class Controller {
      * @param type
      */
     private void displayDialog(String title, String header, String text, Alert.AlertType type) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
+        Alert alert = new Alert(type);
         alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(text);
@@ -833,6 +958,26 @@ public class Controller {
     private void showErrorDialog(String title, String header, String text) {
         displayDialog(title, header, text, Alert.AlertType.ERROR);
     }
+
+    private boolean showConfirmationDialog(String title, String header, String text) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(text);
+        ButtonType okButton = new ButtonType("Yes", ButtonBar.ButtonData.YES);
+        ButtonType noButton = new ButtonType("No", ButtonBar.ButtonData.NO);
+        alert.getButtonTypes().setAll(okButton, noButton);
+        AtomicBoolean returnValue = new AtomicBoolean(false);
+        alert.showAndWait().ifPresent(type -> {
+            if (type.getButtonData() == ButtonBar.ButtonData.YES) {
+                returnValue.set(true);
+            } else {
+                returnValue.set(false);
+            }
+        });
+        return returnValue.get();
+    }
+
     /**
      * Poziva metodu za ispis dialoga, prikaz, kako god.
      * Tip se zakljucuje iz naziva metode
@@ -853,7 +998,7 @@ public class Controller {
      * @param text
      */
     private void showSuccessDialog(String title, String header, String text) {
-        displayDialog(title, header, text, Alert.AlertType.CONFIRMATION);
+        displayDialog(title, header, text, Alert.AlertType.INFORMATION);
     }
 
 }
