@@ -37,6 +37,14 @@ public class PGP
         logger.info("PGP created");
     }
 
+    public static void signatureAndEncryption(){
+
+    }
+
+    public static void decryptionAndVerification(){
+
+    }
+
     /**
      *  Decrypt file with given name
      *
@@ -47,7 +55,7 @@ public class PGP
      *                       if file name not present in encoded data
      * @throws IOException
      */
-    public static void decryptFile(String inputFileName,
+    private static void decryptFile(String inputFileName,
                                    String secretKeyFileName,
                                    String passphrase,
                                    String fileName) throws IOException, PGPException {
@@ -167,7 +175,7 @@ public class PGP
      * @throws IOException
      * @throws PGPException
      */
-    public static String encryptFile(String fileToEncrypt,
+    private static String encryptFile(String fileToEncrypt,
                                    PGPPublicKey[] publicKeys,
                                    int algorithm,
                                    boolean compress,
@@ -232,7 +240,7 @@ public class PGP
      * @throws IOException
      * @throws PGPException
      */
-    public static boolean verifyFile(String fileToVerify,
+    private static boolean verifyFile(String fileToVerify,
                                      String publicKeyFileName) throws IOException, PGPException, SignatureException {
 
         InputStream fileInputStream = PGPUtil.getDecoderStream(new BufferedInputStream(new FileInputStream(fileToVerify)));
@@ -295,7 +303,7 @@ public class PGP
      * @throws IOException
      * @throws PGPException
      */
-    public static String signFile(
+    private static String signFile(
             String fileToSign,
             PGPPrivateKey privateKey,
             PGPPublicKey publicKey,
@@ -392,13 +400,14 @@ public class PGP
      * @throws IOException
      * @throws PGPException
      */
-    public static String signAndEncrypt(String fileToSign,
+    private static String signAndEncrypt(String fileToSign,
                                         PGPPrivateKey privateKey,
                                         PGPPublicKey publicKey,
                                         PGPPublicKey[] publicKeys,
                                         int algorithm,
                                         boolean radix64,
                                         boolean compress) throws IOException,PGPException {
+        // literalOutput => compressedStrem => encryptedStream => outputStream
         logger.info("signFile(" + fileToSign + ")");
         OutputStream outputStream;
         String signedFile = fileToSign;
@@ -511,7 +520,7 @@ public class PGP
      * @throws PGPException
      * @throws SignatureException
      */
-    public static boolean decryptAndVerify(String inputFileName,
+    private static boolean decryptAndVerify(String inputFileName,
                                            String secretKeyFileName,
                                            String publicKeyFileName,
                                            String passphrase) throws IOException, PGPException, SignatureException {

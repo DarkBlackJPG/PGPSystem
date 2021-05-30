@@ -12,6 +12,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 
 import java.io.*;
 import java.util.*;
@@ -29,40 +30,83 @@ import java.util.regex.Pattern;
 
 
 public class Controller {
-    public ComboBox exportKeyChoiceCombobox;
-    public ComboBox newKeyPairAlgorithm; // ne trebaju kljucevi
-    public ChoiceBox encryptionAlgorithmsChoiceBox; // Ne trebaju kljucevi
-    public ChoiceBox signChoiceBox;
-    public TableView certificateTableTableView;
-    public TableView publicKeyEncryptionChoiceTableView;
+   /************************ ENCRYPTION *****************************/
+    @FXML
+    private Button browseFileChooserTriggerButton;
+    @FXML
+    private TextField browseFileLocationTextField;
+    @FXML
+    private CheckBox useEncryptionCheckBox;
+    @FXML
+    private ChoiceBox encryptionAlgorithmsChoiceBox; // Ne trebaju kljucevi
+    @FXML
+    private CheckBox signCheckBox;
+    @FXML
+    private ChoiceBox signChoiceBox;
+    @FXML
+    private CheckBox compressionCheckBox;
+    @FXML
+    private CheckBox base64ConversionCheckBox;
+    @FXML
+    private Button sendButton;
+    @FXML
+    private TableView publicKeyEncryptionChoiceTableView;
+    /************************ DECRYPTION *****************************/
+    @FXML
+    private Button browseDecryptionFileChooserTriggerButton;
+    @FXML
+    private TextField browseDecryptionFileLocationTextField;
+    @FXML
+    private Button decryptAndVerifyButton;
+    @FXML
+    private TextArea displayDecriptionAndVerificationOutputTextField;
+    @FXML
+    private Button saveDecryptionFileLocationButton;
+    @FXML
+    private TextField decryptionFileLocationTextField;
+    @FXML
+    private Button saveDecryptionFileButton;
+    /************************ EXPORT KEYS *******************************/
+    @FXML
+    private Button browseExportKeysFileButton;
+    @FXML
+    private TextField exportFileLocationTextField;
+    @FXML
+    private Button executeExportKeyButton;
+    @FXML
+    private ComboBox exportKeyChoiceCombobox;
+    /*********************** IMPORT KEYS ****************************/
+    /**** PRIVATE ***/
+    @FXML
+    private Button browseImportSecretKeyButton;
+    @FXML
+    private TextField pathToImportKeyFileTextField;
+    @FXML
+    private Button executeImportSecretKeyButton;
+    /**** PUBLIC ***/
+    @FXML
+    private Button browseImportPublicKeyButton;
+    @FXML
+    private Button executeImportPublicKeyButton;
+    @FXML
+    private TextField publicKeyFIleLocationTextField;
+    /************************ CERTIFICATES *******************************/
+    @FXML
+    private TableView certificateTableTableView;
+    /************************ GENRATE NEW KEYPAIR *******************************/
+    @FXML
+    private TextField newKeyPairName;
+    @FXML
+    private TextField newKeyPairEmail;
+    @FXML
+    private PasswordField newKeyPairPassword;
+    @FXML
+    private ComboBox newKeyPairAlgorithm; // ne trebaju kljucevi
+    @FXML
+    private Button generateNewKeyPairButton;
 
-    public Button browseDecryptionFileChooserTriggerButton;
-    public TextField browseDecryptionFileLocationTextField;
-    public TextArea displayDecriptionAndVerificationOutputTextField;
-    public Button decryptAndVerifyButton;
-    public Button saveDecryptionFileLocationButton;
-    public TextField decryptionFileLocationTextField;
-    public Button saveDecryptionFileButton;
-    public Button browseExportKeysFileButton;
-    public TextField exportFileLocationTextField;
-    public Button executeExportKeyButton;
-    public Button browseImportSecretKeyButton;
-    public TextField pathToImportKeyFileTextField;
-    public Button executeImportSecretKeyButton;
-    public Button browseImportPublicKeyButton;
-    public Button executeImportPublicKeyButton;
-    public TextField publicKeyFIleLocationTextField;
-    public TextField newKeyPairName;
-    public TextField newKeyPairEmail;
-    public PasswordField newKeyPairPassword;
-    public Button generateNewKeyPairButton;
-    public TextField browseFileLocationTextField;
-    public CheckBox useEncryptionCheckBox;
-    public CheckBox signCheckBox;
-    public CheckBox compressionCheckBox;
-    public CheckBox base64ConversionCheckBox;
-    public Button sendButton;
-    public Button browseFileChooserTriggerButton;
+
+
     private List<String> symmetricAlgorithms = new ArrayList<>();
     private List<String> asymmetricAlgorithms = new ArrayList<>();
     private ObservableList<ExportedKeyData> allKeys = FXCollections.observableArrayList();
@@ -74,11 +118,10 @@ public class Controller {
      * <p>
      * Mock za vec implementiranu klasu
      */
-    public static enum KeySizes {
+    private enum KeySizes {
         RSA1024(1024),
         RSA2048(2048),
         RSA4096(4096);
-
 
         private final int keySize;
 
@@ -94,10 +137,7 @@ public class Controller {
     // Sluzi za parsiranje stringa prilikom odabira iz choice box-a za novi tajni kljuc
     private HashMap<String, KeySizes> rsaKeySizesHashMap = new HashMap<>();
 
-    // TODO [INTEGRACIJA] napraviti slican hash za simetricne algoritme, takodje dodati u inicijalizaciju
-    // ---------| CODE GOES HERE
-    // ...
-    // ---------|
+    private HashMap<String, Integer> symmetricAlgorithmsHashMap = new HashMap<String, Integer>();
 
 
     // Inicijalizacija neophodnih struktura podataka za ispis u FX komponente
@@ -106,8 +146,14 @@ public class Controller {
         String rsa2048 = "RSA 2048";
         String rsa4096 = "RSA 4096";
 
-        symmetricAlgorithms.add("Triple DES");
-        symmetricAlgorithms.add("IDEA");
+        String tripleDES = "Triple DES";
+        String idea = "IDEA";
+
+        symmetricAlgorithms.add(tripleDES);
+        symmetricAlgorithms.add(idea);
+
+        symmetricAlgorithmsHashMap.put(tripleDES, SymmetricKeyAlgorithmTags.TRIPLE_DES);
+        symmetricAlgorithmsHashMap.put(tripleDES, SymmetricKeyAlgorithmTags.IDEA);
 
         asymmetricAlgorithms.add(rsa1024);
         asymmetricAlgorithms.add(rsa2048);
@@ -122,288 +168,6 @@ public class Controller {
          * TODO [INTEGRACIJA] Main.keyManagerReference = keyManager;
          */
 
-    }
-
-    /**
-     * Izvrsava ispisivanje
-     *
-     * @param title
-     * @param header
-     * @param text
-     * @param type
-     */
-    private void displayDialog(String title, String header, String text, Alert.AlertType type) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(header);
-        alert.setContentText(text);
-        alert.showAndWait();
-
-    }
-
-    private void removeKeyFromObservableKeyCollection(ExportedKeyData keyData) {
-        removeKeyFromObservableKeyCollection(keyData.getKeyID());
-    }
-
-    private void removeKeyFromObservableKeyCollection(long keyID) {
-        for (int i = 0; i < allKeys.size(); ++i) {
-            if (allKeys.get(i).getKeyID() == keyID) {
-                allKeys.remove(i);
-                break;
-            }
-        }
-    }
-
-    /**
-     * Poziva metodu za ispis dialoga, prikaz, kako god.
-     * Tip se zakljucuje iz naziva metode
-     *
-     * @param title
-     * @param header
-     * @param text
-     */
-    private void showErrorDialog(String title, String header, String text) {
-        displayDialog(title, header, text, Alert.AlertType.ERROR);
-    }
-
-    /**
-     * Poziva metodu za ispis dialoga, prikaz, kako god.
-     * Tip se zakljucuje iz naziva metode
-     *
-     * @param title
-     * @param header
-     * @param text
-     */
-    private void showWarningDialog(String title, String header, String text) {
-        displayDialog(title, header, text, Alert.AlertType.WARNING);
-    }
-
-    /**
-     * Poziva metodu za ispis dialoga, prikaz, kako god.
-     * Tip se zakljucuje iz naziva metode
-     *
-     * @param title
-     * @param header
-     * @param text
-     */
-    private void showSuccessDialog(String title, String header, String text) {
-        displayDialog(title, header, text, Alert.AlertType.CONFIRMATION);
-    }
-
-    /**
-     * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
-     *
-     * @param selection
-     * @return
-     */
-    private KeySizes parseRSAAlgorithmSelection(String selection) {
-        return rsaKeySizesHashMap.get(selection);
-    }
-
-    /**
-     * TODO [INTEGRACIJA] Implementirati analogno parseRSAAlgorithmSelection metodi iznad
-     * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
-     *
-     * @param selection
-     * @return
-     */
-    private Object parseSymmetricKeyAlgorithmSelection(String selection) {
-        return null;
-    }
-
-    // TODO [INTEGRACIJA] implementirati metodu za dobijanje kljuca iz potpisa, potipis ima informaciju o KEYID
-    private Object parseSignatureSelectionToKey(String signature) {
-        String[] elements = signature.split(", ");
-        String userName = elements[0];
-        String email = elements[1];
-        String keyID = elements[2];
-
-        // TODO [INTEGRACIJA] Pretraga trazenog kljuca, vracanje istog;
-        // --------| CODE GOES HERE
-        // ....
-        // --------|
-
-        return null;
-    }
-
-    /**
-     * Vrsi konverziju koja je pogodna za choicebox-ove kako bi se kasnije uradila konverzija za signature
-     * <p>
-     * KORISTITI ZA SVE CHOICE BOX-OVE!!
-     *
-     * @param exportedKeyData
-     * @return
-     */
-    private String parseExportedKeyDataToChoiceBoxReadableText(ExportedKeyData exportedKeyData) {
-        String username = exportedKeyData.getUserName();
-        String email = exportedKeyData.getEmail();
-        long keyID = exportedKeyData.getKeyID();
-
-        return String.format("%s, %s, %d", username, email, keyID);
-
-    }
-
-    public void sendAction(ActionEvent actionEvent) {
-        String fileLocation = browseFileLocationTextField.getText();
-        File file = new File(fileLocation);
-        if (!file.exists()) {
-            showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath!", "The file with the provided filepath doesn't exist or the filepath isnt correct!");
-            return;
-        }
-
-        boolean useEncryption = useEncryptionCheckBox.isSelected();
-        boolean sign = signCheckBox.isSelected();
-        boolean useCompression = compressionCheckBox.isSelected();
-        boolean base64 = base64ConversionCheckBox.isSelected();
-
-        String signature = (String) signChoiceBox.getValue();
-        String encryptionAlgorithm = (String) encryptionAlgorithmsChoiceBox.getValue();
-
-        // TODO [INTEGRACIJA] Uraditi parsiranje enkripcionog algoritma uz pomoc parseSymmetricKeyAlgorithmSelection
-        // --------| CODE GOES HERE
-        // ....
-        // --------|
-
-        // Ako smo se opredelili za potpis, moramo da vidimo da li je signature prazan
-        // Signature treba da se generise na osnovu Username, mail i keyID!!!!
-        // TODO [INTEGRACIJA] Parsirati nase kljuceve (samo privatne) da se izlistaju po definisanoj strukturi i parsirati
-
-        if (sign && signature == null) {
-            showErrorDialog("Input parameters are incorrrect!", "Incorrect signature", "You have to specify for the signature!");
-            return;
-        }
-
-        // Ovo je lista gde stavljamo ljude za koje sifrujemo poruku
-        ArrayList<EncryptionWrapper> data = new ArrayList<>();
-
-
-        // TODO [INTEGRACIJA] Ovde pocinje deo za implementaciju sifrovanja, potpisivanja i zipovanja, zavisi od API-ja
-        if (useEncryption) {
-            /**
-             * Ovaj deo je napravljen tako da mi dohvatamo sve izlistane u table-view za sifrovanje (slanje) akko je
-             * stiklirano da zelimo enkripciju.
-             *
-             * Encryption wrapper je klasa napravljena da se sastoji od ExtractedKeyData i boolean polja koje
-             * se vezuje za checkbox u tabeli. Tako proveravamo da li saljemo tom i tom liku
-             */
-            for (int i = 0; i < publicKeyEncryptionChoiceTableView.getItems().size(); i++) {
-                EncryptionWrapper temp = (EncryptionWrapper) publicKeyEncryptionChoiceTableView.getItems().get(i);
-                if (temp.isSelected())
-                    data.add(temp);
-            }
-
-            // Ako nikoga ne stikliramo
-            if (data.size() == 0) {
-                showErrorDialog("Input parameters are incorrrect!", "Invalid number of recipients!", "You have to specify everyone that you want to receive your message !");
-                return;
-            }
-        }
-        // TODO [INTEGRACIJA] Uraditi algoritam za slanje u zavisnosti od odabranih parametara
-
-
-    }
-
-    /**
-     * Promenimo stanje ChoiceBox-a na disabled ako je odcekirano (za use encryption)
-     *
-     * @param actionEvent
-     */
-    public void useEncryptionChangeAction(ActionEvent actionEvent) {
-        encryptionAlgorithmsChoiceBox.setDisable(!useEncryptionCheckBox.isSelected());
-        publicKeyEncryptionChoiceTableView.setDisable(!useEncryptionCheckBox.isSelected());
-    }
-
-    /**
-     * Promenimo stanje ChoiceBox-a na disabled ako je odcekirano ( za sign)
-     *
-     * @param actionEvent
-     */
-    public void signChangeAction(ActionEvent actionEvent) {
-        signChoiceBox.setDisable(!signCheckBox.isSelected());
-    }
-
-    /**
-     * Stavljeno za svaki slucaj, ne koristi se
-     *
-     * @param actionEvent
-     */
-    public void compressionChangeAction(ActionEvent actionEvent) {
-        // Empty
-    }
-
-    /**
-     * Stavljeno za svaki slucaj, ne koristi se
-     *
-     * @param actionEvent
-     */
-    public void base64ConversionChangeAction(ActionEvent actionEvent) {
-        // Empty
-    }
-
-    // End - Encryption
-
-    /**
-     * Samo pravimo kolone za ispis svih sertifikata, nis spec
-     */
-    private void createCertificatesListView() {
-        TableColumn nameColumn = new TableColumn("Name");
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("userName"));
-        TableColumn emailColumn = new TableColumn("Email");
-        emailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
-        TableColumn validFrom = new TableColumn("Valid from");
-        validFrom.setCellValueFactory(new PropertyValueFactory<>("validFrom"));
-        TableColumn validUntil = new TableColumn("Valid Until");
-        validUntil.setCellValueFactory(new PropertyValueFactory<>("validUntil"));
-        TableColumn keyId = new TableColumn("Key ID");
-        keyId.setCellValueFactory(new PropertyValueFactory<>("keyID"));
-        TableColumn isMaster = new TableColumn("Master Key");
-        isMaster.setCellValueFactory(new PropertyValueFactory<>("isMasterKey"));
-        certificateTableTableView.getColumns().addAll(nameColumn, emailColumn, validFrom, validUntil, keyId, isMaster);
-
-    }
-
-    /**
-     * Dodajemo kolone u tabelu za enkripciju, treba napraviti posebnu kolonu za checkbox
-     * <a href="https://stackoverflow.com/a/36953229">Link</a> za checkbox dodavanje, samo prebaceno u lambda
-     * <p>
-     * Property value factory implicitno poziva za klasu koju prosledjujes prilikom dodavanja u table
-     * gettere na osnovu field-name-a koji zapises ovde.
-     * <p>
-     * Tacnije - poziva bilo koju metodu sa konvencijom Camel-Case getFieldname()... Ne mora da bude polje u samoj
-     * klasi, bitna je konvencija imenovanja. Referencirati Wrapper klasu i pogledati primer gettera! Polje je Extracted
-     * key data i onda vracamo iz tog objekta sta nam je potrebno
-     */
-    private void initializePublicKeyEncryptionKeys() {
-        TableColumn encryptionCheckbox = new TableColumn("Encrypt");
-        encryptionCheckbox.setCellValueFactory((Callback<TableColumn.CellDataFeatures<EncryptionWrapper, CheckBox>, ObservableValue<CheckBox>>) arg0 -> {
-            EncryptionWrapper user = arg0.getValue();
-            CheckBox checkBox = new CheckBox();
-            checkBox.selectedProperty().setValue(user.isSelected());
-            checkBox.selectedProperty().addListener((ov, old_val, new_val) -> user.setSelected(new_val));
-            return new SimpleObjectProperty<>(checkBox);
-        });
-        TableColumn encryptionName = new TableColumn("Name");
-        encryptionName.setCellValueFactory(new PropertyValueFactory<>("userName"));
-        TableColumn encryptionEmail = new TableColumn("Email");
-        encryptionEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
-        TableColumn encryptionKeyId = new TableColumn("Key ID");
-        encryptionKeyId.setCellValueFactory(new PropertyValueFactory<>("keyID"));
-
-        publicKeyEncryptionChoiceTableView.getColumns().addAll(encryptionCheckbox, encryptionName, encryptionEmail, encryptionKeyId);
-    }
-
-    /**
-     * Ovo je pomocna metoda za dodavanje ExportedKeyData u "kolekciju" iliti observable listu svih kljuceva
-     * u sistemu. Odvojeno je ovako zbog potencijalne provere postojanja istog kl;jjuca
-     *
-     * @param data
-     */
-    private void addKeyToAllKeys(ExportedKeyData data) {
-        // TODO [INTEGRACIJA] Da li treba proveravati da postoji kljuc sa istim parametrima???
-
-        // Provera
-
-        allKeys.add(data);
     }
 
     /**
@@ -469,6 +233,240 @@ public class Controller {
 
 
         // TODO [INTEGRACIJA] Tu treba popuniti takodje i ostale choiceBox-ove gde mozemo da biramo kljuceve
+    }
+
+    private void removeKeyFromObservableKeyCollection(ExportedKeyData keyData) {
+        removeKeyFromObservableKeyCollection(keyData.getKeyID());
+    }
+    private void removeKeyFromObservableKeyCollection(long keyID) {
+        for (int i = 0; i < allKeys.size(); ++i) {
+            if (allKeys.get(i).getKeyID() == keyID) {
+                allKeys.remove(i);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
+     *
+     * @param selection
+     * @return
+     */
+    private KeySizes parseRSAAlgorithmSelection(String selection) {
+        return rsaKeySizesHashMap.get(selection);
+    }
+
+    /**
+     * Kao sto ime naslucuje, parsirramo odabran algoritam is choice box u nesto sto API moze da koristi
+     *
+     * @param selection
+     * @return
+     */
+    private int parseSymmetricKeyAlgorithmSelection(String selection) {
+        return symmetricAlgorithmsHashMap.get(selection);
+    }
+
+    // TODO [INTEGRACIJA] implementirati metodu za dobijanje kljuca iz potpisa, potipis ima informaciju o KEYID
+    private Object parseSignatureSelectionToKey(String signature) {
+        String[] elements = signature.split(", ");
+        String userName = elements[0];
+        String email = elements[1];
+        String keyID = elements[2];
+
+        // TODO [INTEGRACIJA] Pretraga trazenog kljuca, vracanje istog;
+        // --------| CODE GOES HERE
+        // ....
+        // --------|
+
+        return null;
+    }
+
+    /**
+     * Vrsi konverziju koja je pogodna za choicebox-ove kako bi se kasnije uradila konverzija za signature
+     * <p>
+     * KORISTITI ZA SVE CHOICE BOX-OVE!!
+     *
+     * @param exportedKeyData
+     * @return
+     */
+    private String parseExportedKeyDataToChoiceBoxReadableText(ExportedKeyData exportedKeyData) {
+        String username = exportedKeyData.getUserName();
+        String email = exportedKeyData.getEmail();
+        long keyID = exportedKeyData.getKeyID();
+
+        return String.format("%s, %s, %d", username, email, keyID);
+
+    }
+
+    /**
+     * Encrypt message and send based on selected parameters
+     *
+     * @param actionEvent
+     */
+    public void sendAction(ActionEvent actionEvent) {
+        String fileLocation = browseFileLocationTextField.getText();
+        File file = new File(fileLocation);
+        if (!file.exists()) {
+            showErrorDialog("Input parameters are incorrrect!",
+                    "Incorrect filepath!",
+                    "The file with the provided filepath doesn't exist or the filepath isnt correct!");
+            return;
+        }
+
+        boolean useEncryption = useEncryptionCheckBox.isSelected();
+        boolean sign = signCheckBox.isSelected();
+        boolean useCompression = compressionCheckBox.isSelected();
+        boolean base64 = base64ConversionCheckBox.isSelected();
+
+        String signature = (String) signChoiceBox.getValue();
+        String encryptionAlgorithm = (String) encryptionAlgorithmsChoiceBox.getValue();
+
+        int algorithm = parseSymmetricKeyAlgorithmSelection(encryptionAlgorithm);
+
+        // Ako smo se opredelili za potpis, moramo da vidimo da li je signature prazan
+        // Signature treba da se generise na osnovu Username, mail i keyID!!!!
+        // TODO [INTEGRACIJA] Parsirati nase kljuceve (samo privatne) da se izlistaju po definisanoj strukturi i parsirati
+
+        if (sign && signature == null) {
+            showErrorDialog("Input parameters are incorrrect!",
+                          "Incorrect signature",
+                            "You have to specify for the signature!");
+            return;
+        }
+
+        // Ovo je lista gde stavljamo ljude za koje sifrujemo poruku
+        ArrayList<EncryptionWrapper> data = new ArrayList<>();
+
+
+        // TODO [INTEGRACIJA] Ovde pocinje deo za implementaciju sifrovanja, potpisivanja i zipovanja, zavisi od API-ja
+        if (useEncryption) {
+            /**
+             * Ovaj deo je napravljen tako da mi dohvatamo sve izlistane u table-view za sifrovanje (slanje) akko je
+             * stiklirano da zelimo enkripciju.
+             *
+             * Encryption wrapper je klasa napravljena da se sastoji od ExtractedKeyData i boolean polja koje
+             * se vezuje za checkbox u tabeli. Tako proveravamo da li saljemo tom i tom liku
+             */
+            for (int i = 0; i < publicKeyEncryptionChoiceTableView.getItems().size(); i++) {
+                EncryptionWrapper temp = (EncryptionWrapper) publicKeyEncryptionChoiceTableView.getItems().get(i);
+                if (temp.isSelected())
+                    data.add(temp);
+            }
+
+            // Ako nikoga ne stikliramo
+            if (data.size() == 0) {
+                showErrorDialog("Input parameters are incorrrect!",
+                                "Invalid number of recipients!",
+                                "You have to specify everyone that you want to receive your message !");
+                return;
+            }
+        }
+        // TODO [INTEGRACIJA] Uraditi algoritam za slanje u zavisnosti od odabranih parametara
+
+
+    }
+
+    /**
+     * Promenimo stanje ChoiceBox-a na disabled ako je odcekirano (za use encryption)
+     *
+     * @param actionEvent
+     */
+    public void useEncryptionChangeAction(ActionEvent actionEvent) {
+        encryptionAlgorithmsChoiceBox.setDisable(!useEncryptionCheckBox.isSelected());
+        publicKeyEncryptionChoiceTableView.setDisable(!useEncryptionCheckBox.isSelected());
+    }
+
+    /**
+     * Promenimo stanje ChoiceBox-a na disabled ako je odcekirano ( za sign)
+     *
+     * @param actionEvent
+     */
+    public void signChangeAction(ActionEvent actionEvent) {
+        signChoiceBox.setDisable(!signCheckBox.isSelected());
+    }
+
+    /**
+     * Stavljeno za svaki slucaj, ne koristi se
+     *
+     * @param actionEvent
+     */
+    public void compressionChangeAction(ActionEvent actionEvent) {
+        // Empty
+    }
+
+    /**
+     * Stavljeno za svaki slucaj, ne koristi se
+     *
+     * @param actionEvent
+     */
+    public void base64ConversionChangeAction(ActionEvent actionEvent) {
+        // Empty
+    }
+    // End - Encryption
+
+    /**
+     * Samo pravimo kolone za ispis svih sertifikata, nis spec
+     */
+    private void createCertificatesListView() {
+        TableColumn nameColumn = new TableColumn("Name");
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("userName"));
+        TableColumn emailColumn = new TableColumn("Email");
+        emailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
+        TableColumn validFrom = new TableColumn("Valid from");
+        validFrom.setCellValueFactory(new PropertyValueFactory<>("validFrom"));
+        TableColumn validUntil = new TableColumn("Valid Until");
+        validUntil.setCellValueFactory(new PropertyValueFactory<>("validUntil"));
+        TableColumn keyId = new TableColumn("Key ID");
+        keyId.setCellValueFactory(new PropertyValueFactory<>("keyID"));
+        TableColumn isMaster = new TableColumn("Master Key");
+        isMaster.setCellValueFactory(new PropertyValueFactory<>("isMasterKey"));
+        certificateTableTableView.getColumns().addAll(nameColumn, emailColumn, validFrom, validUntil, keyId, isMaster);
+
+    }
+
+    /**
+     * Dodajemo kolone u tabelu za enkripciju, treba napraviti posebnu kolonu za checkbox
+     * <a href="https://stackoverflow.com/a/36953229">Link</a> za checkbox dodavanje, samo prebaceno u lambda
+     * <p>
+     * Property value factory implicitno poziva za klasu koju prosledjujes prilikom dodavanja u table
+     * gettere na osnovu field-name-a koji zapises ovde.
+     * <p>
+     * Tacnije - poziva bilo koju metodu sa konvencijom Camel-Case getFieldname()... Ne mora da bude polje u samoj
+     * klasi, bitna je konvencija imenovanja. Referencirati Wrapper klasu i pogledati primer gettera! Polje je Extracted
+     * key data i onda vracamo iz tog objekta sta nam je potrebno
+     */
+    private void initializePublicKeyEncryptionKeys() {
+        TableColumn encryptionCheckbox = new TableColumn("Encrypt");
+        encryptionCheckbox.setCellValueFactory((Callback<TableColumn.CellDataFeatures<EncryptionWrapper, CheckBox>, ObservableValue<CheckBox>>) arg0 -> {
+            EncryptionWrapper user = arg0.getValue();
+            CheckBox checkBox = new CheckBox();
+            checkBox.selectedProperty().setValue(user.isSelected());
+            checkBox.selectedProperty().addListener((ov, old_val, new_val) -> user.setSelected(new_val));
+            return new SimpleObjectProperty<>(checkBox);
+        });
+        TableColumn encryptionName = new TableColumn("Name");
+        encryptionName.setCellValueFactory(new PropertyValueFactory<>("userName"));
+        TableColumn encryptionEmail = new TableColumn("Email");
+        encryptionEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+        TableColumn encryptionKeyId = new TableColumn("Key ID");
+        encryptionKeyId.setCellValueFactory(new PropertyValueFactory<>("keyID"));
+
+        publicKeyEncryptionChoiceTableView.getColumns().addAll(encryptionCheckbox, encryptionName, encryptionEmail, encryptionKeyId);
+    }
+
+    /**
+     * Ovo je pomocna metoda za dodavanje ExportedKeyData u "kolekciju" iliti observable listu svih kljuceva
+     * u sistemu. Odvojeno je ovako zbog potencijalne provere postojanja istog kljuca
+     *
+     * @param data
+     */
+    private void addKeyToAllKeys(ExportedKeyData data) {
+        // TODO [INTEGRACIJA] Da li treba proveravati da postoji kljuc sa istim parametrima???
+
+        // Provera
+
+        allKeys.add(data);
     }
 
     /**
@@ -804,4 +802,58 @@ public class Controller {
             }
         }
     }
+
+
+
+    /******************* DISPLAY DIALOGS **********************/
+    /**
+     * Izvrsava ispisivanje
+     *
+     * @param title
+     * @param header
+     * @param text
+     * @param type
+     */
+    private void displayDialog(String title, String header, String text, Alert.AlertType type) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(text);
+        alert.showAndWait();
+
+    }
+    /**
+     * Poziva metodu za ispis dialoga, prikaz, kako god.
+     * Tip se zakljucuje iz naziva metode
+     *
+     * @param title
+     * @param header
+     * @param text
+     */
+    private void showErrorDialog(String title, String header, String text) {
+        displayDialog(title, header, text, Alert.AlertType.ERROR);
+    }
+    /**
+     * Poziva metodu za ispis dialoga, prikaz, kako god.
+     * Tip se zakljucuje iz naziva metode
+     *
+     * @param title
+     * @param header
+     * @param text
+     */
+    private void showWarningDialog(String title, String header, String text) {
+        displayDialog(title, header, text, Alert.AlertType.WARNING);
+    }
+    /**
+     * Poziva metodu za ispis dialoga, prikaz, kako god.
+     * Tip se zakljucuje iz naziva metode
+     *
+     * @param title
+     * @param header
+     * @param text
+     */
+    private void showSuccessDialog(String title, String header, String text) {
+        displayDialog(title, header, text, Alert.AlertType.CONFIRMATION);
+    }
+
 }
