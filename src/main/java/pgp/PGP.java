@@ -8,9 +8,9 @@ import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 import org.bouncycastle.util.io.Streams;
-import sample.EncryptionWrapper;
 import utility.KeyManager.KeyringManager;
 import utility.PGPutil;
+import utility.helper.EncryptionWrapper;
 
 import java.io.*;
 import java.security.SecureRandom;
@@ -24,8 +24,7 @@ import java.util.Iterator;
  * Class with static methods for encryption, decryption, signing and verification.
  * As well as signing + encryption and decryption + verification.
  */
-public class PGP
-{
+public class PGP {
     private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
     private static final int SIGNATURE_TYPE = PGPSignature.BINARY_DOCUMENT;
     private static final char FILE_TYPE = PGPLiteralData.BINARY;
@@ -43,16 +42,18 @@ public class PGP
     }
 
     /**
+     * Encrypt and/or sign the file based on preferences
      *
-     * @param sign
-     * @param encrypt
-     * @param radix64
-     * @param compress
-     * @param algorithm
-     * @param data
-     * @param fileLocation
-     * @param signKeyID
-     * @param passphrase
+     * @param sign  if true sign file using {@code signKeyID}, otherwise no effect
+     * @param encrypt  if true encrypt file using {@code data}, otherwise no effect
+     * @param radix64  if true encrypted data will be encoded with {@link ArmoredOutputStream}
+     * @param compress  if true data will be compressed before encryption using
+     *                  {@code ZIP} algorithm {@link CompressionAlgorithmTags}
+     * @param algorithm  algorithm to be used for encryption {@link SymmetricKeyAlgorithmTags}
+     * @param data  {@link EncryptionWrapper} data of public keys for encryption
+     * @param fileLocation  path to the {@link File} you wish to encrypt and/or sign
+     * @param signKeyID  ID of key used to sign the given file
+     * @param passphrase  password used to extract {@link PGPPrivateKey} for signature
      * @throws PGPException
      * @throws IOException
      * @throws IllegalArgumentException
@@ -111,6 +112,7 @@ public class PGP
             encryptFile(fileLocation, (PGPPublicKey[]) publicKeys.toArray(), algorithm, compress, radix64);
         }
     }
+
     /**
      *  Decrypt file with given name and verify its signatures
      *
@@ -247,7 +249,6 @@ public class PGP
             logger.info("PGPPublicKeyEncryptedData no integrity check");
         }
     }
-
 
     /**
      * Encrypt the file based on preferences
@@ -622,7 +623,7 @@ public class PGP
                                            String secretKeyFileName,
                                            String publicKeyFileName,
                                            String passphrase,
-                                           String fileName) throws IOException, PGPException, SignatureException {
+                                           String fileName) throws IOException, PGPException {
         int[] ret = {-1, -1};
         logger.info("decryptFile(" + inputFileName + ")");
         InputStream fileInput = new BufferedInputStream(new FileInputStream(inputFileName));
