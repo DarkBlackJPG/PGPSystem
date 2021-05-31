@@ -70,7 +70,7 @@ public class PGP {
         PGPPublicKey publicKey = null;
         PGPSecretKey secretKey = null;
         PGPPrivateKey privateKey = null;
-        ArrayList<PGPPublicKey> publicKeys = null;
+        ArrayList<PGPPublicKey> publicKeys = new ArrayList<>();
         PGPSecretKeyRingCollection secretKeyRingCollection = null;
         if (sign) {
             secretKeyRingCollection = new PGPSecretKeyRingCollection(
@@ -92,13 +92,14 @@ public class PGP {
                     }
                     publicKeys.add(secretKey.getPublicKey());
                 }
+                PGPPublicKey[] publicKeysArray = new PGPPublicKey[publicKeys.size()];
+                publicKeysArray = publicKeys.toArray(publicKeysArray);
                 signAndEncrypt(fileLocation, privateKey, publicKey,
-                        (PGPPublicKey[]) publicKeys.toArray(), algorithm, radix64, compress);
+                        publicKeysArray, algorithm, radix64, compress);
             } else {
                 signFile(fileLocation, privateKey, publicKey, radix64, compress);
             }
-        }
-        if (encrypt) {
+        } else if (encrypt) {
             secretKeyRingCollection = new PGPSecretKeyRingCollection(
                     PGPUtil.getDecoderStream(new FileInputStream(privateKeyFile)),
                     new JcaKeyFingerprintCalculator());
@@ -109,7 +110,9 @@ public class PGP {
                 }
                 publicKeys.add(secretKey.getPublicKey());
             }
-            encryptFile(fileLocation, (PGPPublicKey[]) publicKeys.toArray(), algorithm, compress, radix64);
+            PGPPublicKey[] publicKeysArray = new PGPPublicKey[publicKeys.size()];
+            publicKeysArray = publicKeys.toArray(publicKeysArray);
+            encryptFile(fileLocation, publicKeysArray, algorithm, compress, radix64);
         }
     }
 

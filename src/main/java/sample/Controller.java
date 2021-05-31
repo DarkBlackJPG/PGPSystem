@@ -356,7 +356,7 @@ public class Controller {
                         "You must insert your passphrase!");
                 return;
             }
-            signKeyID = Long.parseLong(parseSignatureSelectionToString(signature)[2]);
+            signKeyID = Long.parseLong(parseSignatureSelectionToString(signature)[2], 16);
         }
 
         if (useEncryption) {
