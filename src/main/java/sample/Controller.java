@@ -9,10 +9,14 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.openpgp.PGPException;
+import pgp.PGP;
 
 import java.io.*;
 import java.util.*;
@@ -268,18 +272,19 @@ public class Controller {
     }
 
     // TODO [INTEGRACIJA] implementirati metodu za dobijanje kljuca iz potpisa, potipis ima informaciju o KEYID
-    private Object parseSignatureSelectionToKey(String signature) {
+    private String[] parseSignatureSelectionToKey(String signature) {
         String[] elements = signature.split(", ");
         String userName = elements[0];
         String email = elements[1];
         String keyID = elements[2];
+
 
         // TODO [INTEGRACIJA] Pretraga trazenog kljuca, vracanje istog;
         // --------| CODE GOES HERE
         // ....
         // --------|
 
-        return null;
+        return elements;
     }
 
     /**
@@ -308,40 +313,56 @@ public class Controller {
         String fileLocation = browseFileLocationTextField.getText();
         File file = new File(fileLocation);
         if (!file.exists()) {
-            showErrorDialog("Input parameters are incorrrect!",
+            showErrorDialog("Input parameters are incorrect!",
                     "Incorrect filepath!",
-                    "The file with the provided filepath doesn't exist or the filepath isnt correct!");
+                    "The file with the provided filepath doesn't exist or the filepath isn't correct!");
             return;
         }
 
         boolean useEncryption = useEncryptionCheckBox.isSelected();
-        boolean sign = signCheckBox.isSelected();
-        boolean useCompression = compressionCheckBox.isSelected();
-        boolean base64 = base64ConversionCheckBox.isSelected();
-
-        String signature = (String) signChoiceBox.getValue();
-        String encryptionAlgorithm = (String) encryptionAlgorithmsChoiceBox.getValue();
-
-        int algorithm = parseSymmetricKeyAlgorithmSelection(encryptionAlgorithm);
-
-        // Ako smo se opredelili za potpis, moramo da vidimo da li je signature prazan
-        // Signature treba da se generise na osnovu Username, mail i keyID!!!!
-        // TODO [INTEGRACIJA] Parsirati nase kljuceve (samo privatne) da se izlistaju po definisanoj strukturi i parsirati
-
-        if (sign && signature == null) {
-            showErrorDialog("Input parameters are incorrrect!",
-                          "Incorrect signature",
-                            "You have to specify for the signature!");
-            return;
-        }
-
+        String encryptionAlgorithm = null;
+        int algorithm = -1;
         // Ovo je lista gde stavljamo ljude za koje sifrujemo poruku
         ArrayList<EncryptionWrapper> data = new ArrayList<>();
 
+        boolean useCompression = compressionCheckBox.isSelected();
+        boolean base64 = base64ConversionCheckBox.isSelected();
 
-        // TODO [INTEGRACIJA] Ovde pocinje deo za implementaciju sifrovanja, potpisivanja i zipovanja, zavisi od API-ja
+        boolean sign = signCheckBox.isSelected();
+        String signature = (String) signChoiceBox.getValue();
+        long signKeyID = -1;
+        String passphrase = null;
+
+        // Ako smo se opredelili za potpis, moramo da vidimo da li je signature prazan
+        // Signature treba da se generise na osnovu Username, mail i keyID!!!!
+
+        if(sign) {
+            if(signature == null) {
+                showErrorDialog("Input parameters are incorrrect!",
+                        "Incorrect signature",
+                        "You have to specify for the signature!");
+                return;
+            }
+            passphrase = passwordInputDialogBox();
+            if(passphrase.isBlank()){
+                showErrorDialog("Input parameters are incorrect!",
+                        "No passphrase entered!",
+                        "You must insert your passphrase!");
+                return;
+            }
+            signKeyID = Long.parseLong(parseSignatureSelectionToKey(signature)[2]);
+        }
+
         if (useEncryption) {
-            /**
+            encryptionAlgorithm = (String) encryptionAlgorithmsChoiceBox.getValue();
+            if(encryptionAlgorithm.isBlank()){
+                showErrorDialog("Input parameters are incorrect!",
+                        "No algorithm selected!",
+                        "Algorithm must be selected if encryption is used!");
+                return;
+            }
+            algorithm = parseSymmetricKeyAlgorithmSelection(encryptionAlgorithm);
+            /*
              * Ovaj deo je napravljen tako da mi dohvatamo sve izlistane u table-view za sifrovanje (slanje) akko je
              * stiklirano da zelimo enkripciju.
              *
@@ -353,18 +374,25 @@ public class Controller {
                 if (temp.isSelected())
                     data.add(temp);
             }
-
             // Ako nikoga ne stikliramo
             if (data.size() == 0) {
-                showErrorDialog("Input parameters are incorrrect!",
+                showErrorDialog("Input parameters are incorrect!",
                                 "Invalid number of recipients!",
                                 "You have to specify everyone that you want to receive your message !");
                 return;
             }
         }
-        // TODO [INTEGRACIJA] Uraditi algoritam za slanje u zavisnosti od odabranih parametara
 
-
+        try {
+            PGP.signatureAndEncryption(sign, useEncryption, base64, useCompression,
+                                       algorithm, data, fileLocation, signKeyID, passphrase);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showExceptionDialog("Encryption",
+                                "Encryption exception",
+                                "An exception during encryption has occured. See stacktrace for more details.",
+                                    e);
+        }
     }
 
     /**
@@ -474,7 +502,7 @@ public class Controller {
      *
      * @param actionEvent
      */
-    public void browseFiileAction(ActionEvent actionEvent) {
+    public void browseFileAction(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");
         File file = fileChooser.showOpenDialog(Main.mainReference.currentStage);
@@ -484,46 +512,96 @@ public class Controller {
     }
 
     /**
-     * Elegantan nacin za unos password-a, obavezno koristiti za dekripcije/enkripcije, sta vec
-     *
-     * @return
-     */
-    private String passwordInputDialogBox() {
-        PasswordDialog pd = new PasswordDialog();
-        Optional<String> result = pd.showAndWait();
-        AtomicReference<String> passwordResult = new AtomicReference<>();
-        result.ifPresent(password -> passwordResult.set(password));
-        return passwordResult.get();
-    }
-
-    /**
      * Ova metoda ima zadatak da izvrsi dekripciju fajla i izvrsi njenu verifikaciju.
      * Stavio sam pocetan kod samo za proveru validnosti fajla, ostatak je sustinski API
      *
      * @param actionEvent
      */
-    public void startDecriptionAndVerificationButton(ActionEvent actionEvent) {
-        String fileToDecrypt = browseDecryptionFileLocationTextField.getText();
-        File file = new File(fileToDecrypt);
-        if (!file.exists()) {
-            showErrorDialog("Input parameters are incorrrect!", "Incorrect filepath", "You have to specify the correct file path and/or the file doesn't exist!");
+    public void startDecryptionAndVerificationButton(ActionEvent actionEvent) {
+        File fileToDecrypt = new File(browseDecryptionFileLocationTextField.getText());
+        if (!fileToDecrypt.exists()) {
+            showErrorDialog("Input parameters are incorrect!",
+                            "Incorrect filepath",
+                            "You have to specify the correct file path and/or the file doesn't exist!");
             return;
         }
-        try (InputStream stream = new FileInputStream(file)) {
+        File decryptedFile = new File(decryptionFileLocationTextField.getText());
+        if (decryptedFile.exists()) {
+            showErrorDialog("Input parameters are incorrect!",
+                    "Incorrect filepath",
+                    "Decrypted file already exists!");
+            return;
+        }
+        String passphrase = passwordInputDialogBox();
+        if(passphrase.isBlank()){
+            showErrorDialog("Input parameters are incorrect!",
+                    "No passphrase entered!",
+                    "You must insert your passphrase!");
+            return;
+        }
+        try {
+            int[] decryptionResult = PGP.decryptionAndVerification(fileToDecrypt.getAbsolutePath(),
+                    passphrase, decryptedFile.getAbsolutePath());
+            String[] verificationAndIntegrity = new String[2];
+            //signature verification
+            switch (decryptionResult[0]) {
+                case 0:
+                    verificationAndIntegrity[0] = "not present";
+                    break;
+                case 1:
+                    verificationAndIntegrity[0] = "verified";
+                    break;
+                case 2:
+                    verificationAndIntegrity[0] = "failed";
+                    break;
+                default:
+                    showErrorDialog("Decryption failed!",
+                            "Signature verification!",
+                            "Error occurred during signature verification!");
+                    return;
+            }
+            //integrity check
+            switch (decryptionResult[1]) {
+                case 0:
+                    verificationAndIntegrity[1] = "not present";
+                    break;
+                case 1:
+                    verificationAndIntegrity[1] = "passed";
+                    break;
+                case 2:
+                    verificationAndIntegrity[1] = "failed";
+                    break;
+                default:
+                    showErrorDialog("Decryption failed!",
+                            "Signature verification!",
+                            "Error occurred during signature verification!");
+                    return;
+            }
+            if (decryptionResult[0] == 0 || decryptionResult[1] == 0){
+                showWarningDialog("Decryption succeeded!",
+                        "Signature verification & integrity check",
+                        "Signature verification: " + verificationAndIntegrity[0] +
+                                " integrity check: " + verificationAndIntegrity[1]);
+            } else if (decryptionResult[0] == 2 || decryptionResult[1] == 2){
+                showErrorDialog("Decryption succeeded!",
+                        "Signature verification & integrity check",
+                        "Signature verification: " + verificationAndIntegrity[0] +
+                                " integrity check: " + verificationAndIntegrity[1]);
+            } else {
+                showSuccessDialog("Decryption succeeded!",
+                    "Signature verification & integrity check",
+                    "Signature verification: " + verificationAndIntegrity[0] +
+                        " integrity check: " + verificationAndIntegrity[1]);
+            }
+            InputStream in = new FileInputStream(decryptedFile);
+            displayDecriptionAndVerificationOutputTextField.setText(new String(in.readAllBytes()));
 
-            // TODO [INTEGRACIJA] Koriscenje funkcionalnosti za dekripciju i verifikaciju!
-
-
-            // --------| CODE GOES HERE
-            // ....
-            // --------|
-            // displayDecriptionAndVerificationOutputTextField.setText ssa rezultatom
-            // Eventualno dialog box sa info da li je uspeo da verifikuje
-
-        } catch (FileNotFoundException e) {
+        } catch (Exception e){
             e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            showExceptionDialog("Decryption",
+                    "Decryption exception",
+                    "An exception during decryption has occured. See stacktrace for more details.",
+                    e);
         }
     }
 
@@ -815,7 +893,7 @@ public class Controller {
      * @param type
      */
     private void displayDialog(String title, String header, String text, Alert.AlertType type) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
+        Alert alert = new Alert(type);
         alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(text);
@@ -854,6 +932,56 @@ public class Controller {
      */
     private void showSuccessDialog(String title, String header, String text) {
         displayDialog(title, header, text, Alert.AlertType.CONFIRMATION);
+    }
+
+    /**
+     * Elegantan nacin za unos password-a, obavezno koristiti za dekripcije/enkripcije, sta vec
+     *
+     * @return
+     */
+    private String passwordInputDialogBox() {
+        PasswordDialog pd = new PasswordDialog();
+        Optional<String> result = pd.showAndWait();
+        AtomicReference<String> passwordResult = new AtomicReference<>();
+        result.ifPresent(password -> passwordResult.set(password));
+        return passwordResult.get();
+    }
+
+    /**
+     * Ova metoda je preuzeta sa ovog <a href="https://code.makery.ch/blog/javafx-dialogs-official/">linka</a>
+     */
+    private void showExceptionDialog(String title, String header, String text, Exception ex) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(text);
+
+// Create expandable Exception.
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        ex.printStackTrace(pw);
+        String exceptionText = sw.toString();
+
+        Label label = new Label("The exception stacktrace was:");
+
+        TextArea textArea = new TextArea(exceptionText);
+        textArea.setEditable(false);
+        textArea.setWrapText(true);
+
+        textArea.setMaxWidth(Double.MAX_VALUE);
+        textArea.setMaxHeight(Double.MAX_VALUE);
+        GridPane.setVgrow(textArea, Priority.ALWAYS);
+        GridPane.setHgrow(textArea, Priority.ALWAYS);
+
+        GridPane expContent = new GridPane();
+        expContent.setMaxWidth(Double.MAX_VALUE);
+        expContent.add(label, 0, 0);
+        expContent.add(textArea, 0, 1);
+
+// Set expandable Exception into the dialog pane.
+        alert.getDialogPane().setExpandableContent(expContent);
+
+        alert.showAndWait();
     }
 
 }

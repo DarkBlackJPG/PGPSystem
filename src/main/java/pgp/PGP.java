@@ -8,12 +8,15 @@ import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 import org.bouncycastle.util.io.Streams;
+import sample.EncryptionWrapper;
+import utility.KeyManager.KeyringManager;
 import utility.PGPutil;
 
 import java.io.*;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -30,6 +33,8 @@ public class PGP
     private static final int ZIP_ALGORITHM = PGPCompressedData.ZIP;
     private static final Logger logger = Logger.getLogger(PGP.class);
     private static final int BUFFER_SIZE = 256;
+    private static final String publicKeyFile = KeyringManager.publicKeyFile;
+    private static final String privateKeyFile = KeyringManager.privateKeyFile;
 
     static {
         BasicConfigurator.configure();
@@ -37,12 +42,94 @@ public class PGP
         logger.info("PGP created");
     }
 
-    public static void signatureAndEncryption(){
-
+    /**
+     *
+     * @param sign
+     * @param encrypt
+     * @param radix64
+     * @param compress
+     * @param algorithm
+     * @param data
+     * @param fileLocation
+     * @param signKeyID
+     * @param passphrase
+     * @throws PGPException
+     * @throws IOException
+     * @throws IllegalArgumentException
+     */
+    public static void signatureAndEncryption(boolean sign,
+                                              boolean encrypt,
+                                              boolean radix64,
+                                              boolean compress,
+                                              int algorithm,
+                                              ArrayList<EncryptionWrapper> data,
+                                              String fileLocation,
+                                              long signKeyID,
+                                              String passphrase) throws PGPException, IOException, IllegalArgumentException {
+        PGPPublicKey publicKey = null;
+        PGPSecretKey secretKey = null;
+        PGPPrivateKey privateKey = null;
+        ArrayList<PGPPublicKey> publicKeys = null;
+        PGPSecretKeyRingCollection secretKeyRingCollection = null;
+        if (sign) {
+            secretKeyRingCollection = new PGPSecretKeyRingCollection(
+                        PGPUtil.getDecoderStream(new FileInputStream(privateKeyFile)),
+                        new JcaKeyFingerprintCalculator());
+            privateKey = PGPutil.findPrivateKey(secretKeyRingCollection, signKeyID, passphrase);
+            publicKey = secretKeyRingCollection.getSecretKey(signKeyID).getPublicKey();
+            if(privateKey == null){
+                throw new IllegalArgumentException("Private signature key not found.");
+            }
+            if(publicKey == null){
+                throw new IllegalArgumentException("Public signature key not found.");
+            }
+            if (encrypt) {
+                for (EncryptionWrapper pKey : data) {
+                    secretKey = secretKeyRingCollection.getSecretKey(pKey.getKeyID());
+                    if(secretKey == null){
+                        throw new IllegalArgumentException("Key " + pKey.getUserName() + " not found.");
+                    }
+                    publicKeys.add(secretKey.getPublicKey());
+                }
+                signAndEncrypt(fileLocation, privateKey, publicKey,
+                        (PGPPublicKey[]) publicKeys.toArray(), algorithm, radix64, compress);
+            } else {
+                signFile(fileLocation, privateKey, publicKey, radix64, compress);
+            }
+        }
+        if (encrypt) {
+            secretKeyRingCollection = new PGPSecretKeyRingCollection(
+                    PGPUtil.getDecoderStream(new FileInputStream(privateKeyFile)),
+                    new JcaKeyFingerprintCalculator());
+            for (EncryptionWrapper pKey : data) {
+                secretKey = secretKeyRingCollection.getSecretKey(pKey.getKeyID());
+                if (secretKey == null) {
+                    throw new IllegalArgumentException("Public key " + pKey.getUserName() + " not found.");
+                }
+                publicKeys.add(secretKey.getPublicKey());
+            }
+            encryptFile(fileLocation, (PGPPublicKey[]) publicKeys.toArray(), algorithm, compress, radix64);
+        }
     }
-
-    public static void decryptionAndVerification(){
-
+    /**
+     *  Decrypt file with given name and verify its signatures
+     *
+     * @param inputFileName {@code String} for the file to be decrypted
+     * @param passphrase {@code String} used to decode the {@link PGPSecretKey}
+     * @param fileName {@code String} used to make a new decoded {@link File}
+     *                       if file name not present use one from encoded data
+     * @return {@code int[]}   <p>{@code ret[0] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1}<i>verified</i>,
+     *                          {@code 2} <i>failed</i> - <b>signature verification</b></p>
+     *                           <p>{@code ret[1] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1} <i>passed</i>,
+     *                              {@code 2} <i>failed</i> - <b>integrity check</b></p>
+     * @throws IOException
+     * @throws PGPException
+     * @throws SignatureException
+     */
+    public static int[] decryptionAndVerification(String inputFileName,
+                                                     String passphrase,
+                                                     String fileName) throws PGPException, IOException, SignatureException {
+        return decryptAndVerify(inputFileName, privateKeyFile, publicKeyFile, passphrase, fileName);
     }
 
     /**
@@ -52,7 +139,7 @@ public class PGP
      * @param secretKeyFileName {@code String} for the secret key to be found
      * @param passphrase {@code String} used to decode the {@link PGPSecretKey}
      * @param fileName {@code String} used to make a new decoded {@link File}
-     *                       if file name not present in encoded data
+     *                       if file name not present use one from encoded data
      * @throws IOException
      */
     private static void decryptFile(String inputFileName,
@@ -128,10 +215,10 @@ public class PGP
         if (decryptedObject instanceof PGPLiteralData) {
             PGPLiteralData literalData = (PGPLiteralData)decryptedObject;
 
-            String outputFileName = literalData.getFileName();
-            // If no file name given in input stream set default file name
-            if (outputFileName.isBlank()) {
-                outputFileName = fileName;
+            String outputFileName = fileName;
+            // If no file name given set default file name
+            if (fileName.isBlank()) {
+                outputFileName = literalData.getFileName();
             }
             // File to which data is to be written in
             FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
@@ -241,7 +328,8 @@ public class PGP
      * @throws PGPException
      */
     private static boolean verifyFile(String fileToVerify,
-                                     String publicKeyFileName) throws IOException, PGPException, SignatureException {
+                                     String publicKeyFileName,
+                                      String fileName) throws IOException, PGPException, SignatureException {
 
         InputStream fileInputStream = PGPUtil.getDecoderStream(new BufferedInputStream(new FileInputStream(fileToVerify)));
 
@@ -264,7 +352,12 @@ public class PGP
                 new JcaKeyFingerprintCalculator());
 
         PGPPublicKey publicKey = publicKeyRingCollection.getPublicKey(onePassSignature.getKeyID());
-        FileOutputStream fileOutputStream = new FileOutputStream(literalData.getFileName());
+        String outputFileName = fileName;
+        // If no file name given set default file name
+        if (fileName.isBlank()) {
+            outputFileName = literalData.getFileName();
+        }
+        FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
 
         onePassSignature.init(new JcaPGPContentVerifierBuilderProvider()
                         .setProvider(PROVIDER),
@@ -515,15 +608,22 @@ public class PGP
      * @param secretKeyFileName {@code String} for the secret key to be found
      * @param publicKeyFileName {@code String} for the public key to be found
      * @param passphrase {@code String} used to decode the {@link PGPSecretKey}
-     * @return {@code boolean} true if file verified
+     * @param fileName {@code String} used to make a new decoded {@link File}
+     *                       if file name not present use one from encoded data
+     * @return {@code int[]}   <p>{@code ret[0] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1}<i>verified</i>,
+     *                          {@code 2} <i>failed</i> - <b>signature verification</b></p>
+ *                           <p>{@code ret[1] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1} <i>passed</i>,
+*                              {@code 2} <i>failed</i> - <b>integrity check</b></p>
      * @throws IOException
      * @throws PGPException
      * @throws SignatureException
      */
-    private static boolean decryptAndVerify(String inputFileName,
+    private static int[] decryptAndVerify(String inputFileName,
                                            String secretKeyFileName,
                                            String publicKeyFileName,
-                                           String passphrase) throws IOException, PGPException, SignatureException {
+                                           String passphrase,
+                                           String fileName) throws IOException, PGPException, SignatureException {
+        int[] ret = {-1, -1};
         logger.info("decryptFile(" + inputFileName + ")");
         InputStream fileInput = new BufferedInputStream(new FileInputStream(inputFileName));
         InputStream secretKeyInput = new BufferedInputStream(new FileInputStream(secretKeyFileName));
@@ -594,16 +694,16 @@ public class PGP
             } else if (object instanceof PGPSignatureList) {
                 signatureList = (PGPSignatureList) object;
             } else {
-                logger.info("signature verification failed.");
+                logger.info("Literal data input error.");
                 throw new PGPException("message unknown message type.");
             }
             object = pgpObjects.nextObject();
         }
 
-        if (onePassSignatureList == null || signatureList == null) {
-            logger.info("signature verification failed.");
-            throw new PGPException("Poor PGP. Signatures not found.");
-        } else {
+        if (onePassSignatureList == null && signatureList == null) {
+            logger.info("signature verification not present.");
+            ret[0] = 0;
+        } else if (onePassSignatureList != null && signatureList != null) {
 
             PGPOnePassSignature onePassSignature = onePassSignatureList.get(0);
             PGPPublicKeyRingCollection  publicKeyRingCollection = new PGPPublicKeyRingCollection(
@@ -613,7 +713,7 @@ public class PGP
 
             if (publicKey != null && literalData != null) {
                 onePassSignature.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
-                FileOutputStream fileOutputStream = new FileOutputStream(literalData.getFileName());
+                FileOutputStream fileOutputStream = new FileOutputStream(fileName);
 
                 onePassSignature.init(new JcaPGPContentVerifierBuilderProvider()
                                 .setProvider(PROVIDER),
@@ -625,16 +725,31 @@ public class PGP
                 fileOutputStream.close();
                 if (onePassSignature.verify(signatureList.get(0))) {
                     logger.info("signature verified.");
-                    return true;
+                    ret[0] = 1;
                 } else {
                     logger.info("signature verification failed.");
-                    throw new SignatureException("Signature verification failed");
-//                    return false;
+//                    throw new SignatureException("Signature verification failed");
+                    ret[0] = 2;
                 }
             }
-
+        } else {
+            logger.info("signature verification failed.");
+//            throw new SignatureException("Signature verification failed");
+            ret[0] = 2;
         }
-        return true;
+        if (publicKeyEncryptedData.isIntegrityProtected()) {
+            if (!publicKeyEncryptedData.verify()) {
+                logger.info("message failed integrity check");
+                ret[1] = 2;
+            } else {
+                logger.info("PGPPublicKeyEncryptedData passed integrity check");
+                ret[1] = 1;
+            }
+        } else {
+            logger.info("PGPPublicKeyEncryptedData no integrity check");
+            ret[1] = 0;
+        }
+        return ret;
     }
 
 }
