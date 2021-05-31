@@ -22,15 +22,18 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import pgp.PGP;
+import utility.KeyManager.ExportedKeyData;
 import utility.KeyManager.KeyringManager;
 import utility.RSA;
 import utility.helper.EncryptionWrapper;
-import utility.KeyManager.ExportedKeyData;
 import utility.helper.PasswordDialog;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -732,7 +735,7 @@ public class Controller {
         // TODO [INTEGRACIJA] Obavezno proveriti postojanost kljuca
         PGPSecretKey secretKey = parseSignatureSelectionToKey(signature);
 
-        if(secretKey == null)
+        if (secretKey == null)
             return;
 
         if (destination.length() == 0) {
@@ -740,18 +743,19 @@ public class Controller {
             return;
         }
 
-        String fileName = String.format("%s[%s]_%s.asc",
-                secretKey.getUserIDs().next(), Long.toHexString(secretKey.getKeyID()),(new Date().toString().replace(' ', '_')));
+        String fileName = String.format("%s[%s].asc",
+                secretKey.getUserIDs().next().replace('<', '[').replace('>', ']'), Long.toHexString(secretKey.getKeyID()));
         File outputFile = new File(destination + "/" + fileName);
+
         try (OutputStream os = new FileOutputStream(outputFile)) {
-            outputFile.createNewFile();
             // TODO [INTEGRACIJA] Algoritam za export kljuca
+            outputFile.createNewFile();
             keyManager.exportPublicKey(secretKey.getKeyID(), os);
             showSuccessDialog("Successfully exported key", "Key selection was successfully exported", "The key is located at " + outputFile.getAbsolutePath());
-        }  catch (IOException e) {
-            showErrorDialog("Error while trying to import public key!", "There was an unexpected error with the IO Stream!", e.getMessage());
+        } catch (IOException e) {
+            showErrorDialog("Error while trying to export public key!", "There was an unexpected error with the IO Stream!", e.getMessage());
         } catch (PGPException e) {
-            showErrorDialog("Error while trying to import public key!", "PGP exception occurred!", e.getMessage());
+            showErrorDialog("Error while trying to export public key!", "PGP exception occurred!", e.getMessage());
         }
     }
 
@@ -955,8 +959,8 @@ public class Controller {
             directoryChooser.setTitle("Choose where to export");
             File file = directoryChooser.showDialog(Main.mainReference.currentStage);
             if (file != null) {
-                String fileName = String.format("%s[%s]_%s_%s.asc",
-                        keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex(),(new Date().toString().replace(' ', '_')));
+                String fileName = String.format("%s[%s]_%s.asc",
+                        keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex());
                 file = new File(file.getAbsolutePath() + "/" + fileName);
                 try {
                     file.createNewFile();
@@ -965,7 +969,7 @@ public class Controller {
                     showSuccessDialog("Export finished successfully!", "The key was successfully exported!",
                             "The file can be found at: " + file.getAbsolutePath());
                 } catch (IOException | PGPException e) {
-                    showErrorDialog("Error!", "There was an error while trying to export key "+keyData.getKeyIDHex()+"!", e.getMessage());
+                    showErrorDialog("Error!", "There was an error while trying to export key " + keyData.getKeyIDHex() + "!", e.getMessage());
                 }
 
 
@@ -1030,8 +1034,8 @@ public class Controller {
                 directoryChooser.setTitle("Choose where to export");
                 File file = directoryChooser.showDialog(Main.mainReference.currentStage);
                 if (file != null) {
-                    String fileName = String.format("%s[%s]_%s_%s_SECRET.asc",
-                            keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex(), (new Date().toString().replace(' ', '_')));
+                    String fileName = String.format("%s[%s]_%s_SECRET.asc",
+                            keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex());
                     file = new File(file.getAbsolutePath() + "/" + fileName);
                     try {
                         file.createNewFile();
@@ -1040,7 +1044,7 @@ public class Controller {
                         showSuccessDialog("Export finished successfully!", "The key was successfully exported!",
                                 "The file can be found at: " + file.getAbsolutePath());
                     } catch (IOException | PGPException | KeyNotFoundException e) {
-                        showErrorDialog("Error!", "There was an error while trying to export key "+keyData.getKeyIDHex()+"!", e.getMessage());
+                        showErrorDialog("Error!", "There was an error while trying to export key " + keyData.getKeyIDHex() + "!", e.getMessage());
                         if (e instanceof KeyNotFoundException) {
                             removeKeyFromObservableKeyCollection(keyData);
                         }
