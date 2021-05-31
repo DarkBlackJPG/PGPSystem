@@ -22,6 +22,7 @@ class PGP_test {
 
     public static void main(String[] args) {
         PGPKeyPair masterKey;
+        PGPKeyPair signingKey = null;
         InputStream input;
         String fileName;
         boolean radix64 = false, compress = false;
@@ -29,14 +30,16 @@ class PGP_test {
         try {
 /*************************************** KEY GENERATION *****************************************/
             //////////////////GENERATE KEY PAIR//////////////////////////////
-            masterKey = RSA.RSA_GetUtility()
-                    .RSA_SetKeySize(RSA.KeySizes.RSA4096)
-                    .RSA_PGPKeyGenerator();
-            PGPKeyPair signingKey = RSA.RSA_GetUtility()
-                    .RSA_SetKeySize(RSA.KeySizes.RSA4096)
-                    .RSA_PGPKeyGenerator();
             KeyringManager keyringManager = new KeyringManager();
-            keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
+            for (int i = 0; i < 25; i++) {
+                masterKey = RSA.RSA_GetUtility()
+                        .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                        .RSA_PGPKeyGenerator();
+                signingKey = RSA.RSA_GetUtility()
+                        .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                        .RSA_PGPKeyGenerator();
+                keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
+            }
             PGPPublicKey publicKey = signingKey.getPublicKey();
             PGPPrivateKey privateKey = signingKey.getPrivateKey();
 

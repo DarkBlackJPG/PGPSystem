@@ -717,7 +717,12 @@ public class PGP {
 
             if (publicKey != null && literalData != null) {
                 onePassSignature.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
-                FileOutputStream fileOutputStream = new FileOutputStream(fileName);
+                String outputFileName = fileName;
+                // If no file name given set default file name
+                if (fileName.isBlank()) {
+                    outputFileName = literalData.getFileName();
+                }
+                FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
 
                 onePassSignature.init(new JcaPGPContentVerifierBuilderProvider()
                                 .setProvider(PROVIDER),

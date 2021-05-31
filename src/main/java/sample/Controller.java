@@ -16,6 +16,7 @@ import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
+import org.apache.commons.io.FilenameUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -74,7 +75,7 @@ public class Controller {
     @FXML
     private Button decryptAndVerifyButton;
     @FXML
-    private TextArea displayDecriptionAndVerificationOutputTextField;
+    private TextArea displayDecryptionAndVerificationOutputTextField;
     @FXML
     private Button saveDecryptionFileLocationButton;
     @FXML
@@ -341,6 +342,12 @@ public class Controller {
 
         // Ako smo se opredelili za potpis, moramo da vidimo da li je signature prazan
         // Signature treba da se generise na osnovu Username, mail i keyID!!!!
+        if(!sign && !useEncryption){
+            showErrorDialog("Input parameters are incorrect!",
+                    "Sign or encryption",
+                    "You must choose at least one option out of sign and encrypt!");
+            return;
+        }
 
         if(sign) {
             if(signature == null) {
@@ -356,12 +363,12 @@ public class Controller {
                         "You must insert your passphrase!");
                 return;
             }
-            signKeyID = Long.parseLong(parseSignatureSelectionToString(signature)[2], 16);
+            signKeyID = Long.parseUnsignedLong(parseSignatureSelectionToString(signature)[2], 16);
         }
 
         if (useEncryption) {
             encryptionAlgorithm = (String) encryptionAlgorithmsChoiceBox.getValue();
-            if(encryptionAlgorithm.isBlank()){
+            if(encryptionAlgorithm == null) {
                 showErrorDialog("Input parameters are incorrect!",
                         "No algorithm selected!",
                         "Algorithm must be selected if encryption is used!");
@@ -384,7 +391,7 @@ public class Controller {
             if (data.size() == 0) {
                 showErrorDialog("Input parameters are incorrect!",
                         "Invalid number of recipients!",
-                        "You have to specify everyone that you want to receive your message !");
+                        "You have to specify everyone that you want to receive your message!");
                 return;
             }
         }
@@ -392,11 +399,26 @@ public class Controller {
         try {
             PGP.signatureAndEncryption(sign, useEncryption, base64, useCompression,
                     algorithm, data, fileLocation, signKeyID, passphrase);
+            if(sign){
+                if(useEncryption){
+                    showSuccessDialog("Encryption",
+                            "Encryption success",
+                            "File successfully encrypted and signed.");
+                } else {
+                    showSuccessDialog("Encryption",
+                            "Encryption success",
+                            "File successfully signed.");
+                }
+            } else if(useEncryption){
+                showSuccessDialog("Encryption",
+                        "Encryption success",
+                        "File successfully encrypted.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             showExceptionDialog("Encryption",
-                    "Encryption exception",
-                    "An exception during encryption has occured. See stacktrace for more details.",
+                    "Encryption exception!",
+                    "An exception during encryption has occurred. See stacktrace for more details.",
                     e);
         }
     }
@@ -525,20 +547,37 @@ public class Controller {
      * @param actionEvent
      */
     public void startDecryptionAndVerificationButton(ActionEvent actionEvent) {
+        File decryptedFile = null;
         File fileToDecrypt = new File(browseDecryptionFileLocationTextField.getText());
-        if (!fileToDecrypt.exists()) {
+        if (!fileToDecrypt.exists() || !fileToDecrypt.isFile()) {
             showErrorDialog("Input parameters are incorrect!",
                     "Incorrect filepath",
                     "You have to specify the correct file path and/or the file doesn't exist!");
             return;
         }
-        File decryptedFile = new File(decryptionFileLocationTextField.getText());
-        if (decryptedFile.exists()) {
-            showErrorDialog("Input parameters are incorrect!",
-                    "Incorrect filepath",
-                    "Decrypted file already exists!");
-            return;
+
+        String outFile = decryptionFileLocationTextField.getText();
+        if(!outFile.isBlank()) {
+            decryptedFile = new File(outFile);
+            if (decryptedFile.exists()) {
+                showErrorDialog("Input parameters are incorrect!",
+                        "Incorrect filepath",
+                        "Decrypted file already exists!");
+                return;
+            }
+            outFile = decryptedFile.getAbsolutePath();
+        } else {
+            outFile = FilenameUtils.getBaseName(fileToDecrypt.getName());
+            decryptedFile = new File(outFile);
+            if (decryptedFile.exists()) {
+                showErrorDialog("Input parameters are incorrect!",
+                        "Incorrect filepath",
+                        "Decrypted file already exists!");
+                return;
+            }
+            outFile = decryptedFile.getAbsolutePath();
         }
+
         String passphrase = passwordInputDialogBox();
         if(passphrase.isBlank()){
             showErrorDialog("Input parameters are incorrect!",
@@ -548,7 +587,8 @@ public class Controller {
         }
         try {
             int[] decryptionResult = PGP.decryptionAndVerification(fileToDecrypt.getAbsolutePath(),
-                    passphrase, decryptedFile.getAbsolutePath());
+                    passphrase, outFile);
+
             String[] verificationAndIntegrity = new String[2];
             //signature verification
             switch (decryptionResult[0]) {
@@ -600,8 +640,11 @@ public class Controller {
                         "Signature verification: " + verificationAndIntegrity[0] +
                                 " integrity check: " + verificationAndIntegrity[1]);
             }
-            InputStream in = new FileInputStream(decryptedFile);
-            displayDecriptionAndVerificationOutputTextField.setText(new String(in.readAllBytes()));
+
+            InputStream in = new FileInputStream(outFile);
+            displayDecryptionAndVerificationOutputTextField.setText(new String(in.readAllBytes()));
+            displayDecryptionAndVerificationOutputTextField.setWrapText(true);
+            in.close();
 
         } catch (Exception e){
             e.printStackTrace();
