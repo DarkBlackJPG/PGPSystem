@@ -3,7 +3,6 @@ package utility.KeyManager;
 import ExceptionPackage.IncorrectKeyException;
 import ExceptionPackage.KeyNotFoundException;
 import org.bouncycastle.openpgp.*;
-import utility.ExportedKeyData;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +49,12 @@ public interface Keyring {
      * @throws IncorrectKeyException
      */
     void removeSecretKey(long KeyId, String password) throws PGPException, IncorrectKeyException, KeyNotFoundException;
+
+    /**
+     * Sacuva po defaultu keyringove u default fajlove
+     * @throws IOException
+     */
+    void saveKeys() throws IOException;
 
     /**
      * Ova metoda prvo radi ekstrakciju privatnog kljuca.
@@ -117,8 +122,9 @@ public interface Keyring {
      * @param password
      * @throws PGPException
      * @throws IOException
+     * @return
      */
-    void makeKeyPairs(PGPKeyPair masterKey, PGPKeyPair subKey, String username, String email, String password) throws PGPException, IOException;
+    ExportedKeyData makeKeyPairs(PGPKeyPair masterKey, PGPKeyPair subKey, String username, String email, String password) throws PGPException, IOException;
 
     // Helper methods
 
@@ -289,7 +295,7 @@ public interface Keyring {
      */
     void addPublicKey(InputStream publicKey) throws IOException, PGPException;
 
-    void importSecretKeyring(InputStream is) throws IOException, PGPException;
+    ExportedKeyData importSecretKeyring(InputStream is) throws IOException, PGPException;
 
-    void importPublicKeyring(InputStream is) throws IOException, PGPException;
+    ExportedKeyData importPublicKeyring(InputStream is) throws IOException, PGPException;
 }

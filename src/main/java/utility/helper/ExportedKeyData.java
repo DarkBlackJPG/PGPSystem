@@ -1,7 +1,11 @@
-package utility;
+package utility.helper;
+
+import javafx.beans.DefaultProperty;
 
 import java.util.Date;
 
+
+@Deprecated
 public class ExportedKeyData {
     private boolean isMasterKey;
     private String userName;
@@ -10,7 +14,7 @@ public class ExportedKeyData {
     private Date validUntil;
     private long keyID;
 
-    public boolean isMasterKey() {
+    public boolean getIsMasterKey() {
         return isMasterKey;
     }
 
