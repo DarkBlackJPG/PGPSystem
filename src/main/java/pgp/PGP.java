@@ -147,7 +147,7 @@ public class PGP {
      *                       if file name not present use one from encoded data
      * @throws IOException
      */
-    private static void decryptFile(String inputFileName,
+    public static void decryptFile(String inputFileName,
                                    String secretKeyFileName,
                                    String passphrase,
                                    String fileName) throws IOException, PGPException {
@@ -231,11 +231,12 @@ public class PGP {
             // Decrypted and decompressed data ready to be read
             InputStream literalDataInputStream = literalData.getInputStream();
 
-            Streams.pipeAll(literalDataInputStream, BufferedFileOutputStream);
-
+            literalDataInputStream.transferTo(BufferedFileOutputStream);
 
             BufferedFileOutputStream.close();
             literalDataInputStream.close();
+            fileOutputStream.flush();
+            fileOutputStream.close();
         } else if (decryptedObject instanceof PGPOnePassSignatureList) {
             throw new PGPException("signed message - not literal data.");
         } else {
@@ -266,11 +267,11 @@ public class PGP {
      * @throws IOException
      * @throws PGPException
      */
-    private static String encryptFile(String fileToEncrypt,
-                                   PGPPublicKey[] publicKeys,
-                                   int algorithm,
-                                   boolean compress,
-                                   boolean radix64) throws IOException, PGPException {
+    public static String encryptFile(String fileToEncrypt,
+                                     PGPPublicKey[] publicKeys,
+                                     int algorithm,
+                                     boolean compress,
+                                     boolean radix64) throws IOException, PGPException {
         logger.info("encryptFile(" + fileToEncrypt + ")");
 
         // Open new file to which data is written to
@@ -281,7 +282,7 @@ public class PGP {
             outputStream = new ArmoredOutputStream(new FileOutputStream(fileToEncrypt));
             logger.info("convert to radix64");
         } else {
-            fileToEncrypt += ".bpg";
+            fileToEncrypt += ".pgp";
             outputStream = new BufferedOutputStream(new FileOutputStream(fileToEncrypt));
         }
         // Make new encryptor
@@ -414,7 +415,7 @@ public class PGP {
             outputStream = new ArmoredOutputStream(new FileOutputStream(fileName));
             logger.info("convert to radix64");
         } else {
-            fileName += ".bpg";
+            fileName += ".pgp";
             outputStream = new FileOutputStream(fileName);
         }
 
@@ -513,7 +514,7 @@ public class PGP {
             outputStream = new ArmoredOutputStream(new FileOutputStream(signedFile));
             logger.info("convert to radix64");
         } else {
-            signedFile += ".bpg";
+            signedFile += ".pgp";
             outputStream = new FileOutputStream(signedFile);
         }
         // Make new encryptor
@@ -657,9 +658,16 @@ public class PGP {
              privateKey == null && it.hasNext(); ) {
 
             publicKeyEncryptedData = (PGPPublicKeyEncryptedData) it.next();
-
-            privateKey = PGPutil.findPrivateKey(secretKeyRingCollection,
-                    publicKeyEncryptedData.getKeyID(), passphrase);
+            try {
+                privateKey = PGPutil.findPrivateKey(secretKeyRingCollection,
+                        publicKeyEncryptedData.getKeyID(), passphrase);
+            } catch (PGPException e){
+                ret[0] = 3;
+                fileInput.close();
+                secretKeyInput.close();
+                publicKeyInput.close();
+                return ret;
+            }
         }
         // message not for me :(
         if (privateKey == null) {
@@ -707,6 +715,20 @@ public class PGP {
         if (onePassSignatureList == null && signatureList == null) {
             logger.info("signature verification not present.");
             ret[0] = 0;
+
+            if (literalData != null) {
+                String outputFileName = fileName;
+                // If no file name given set default file name
+                if (fileName.isBlank()) {
+                    outputFileName = literalData.getFileName();
+                }
+                FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
+
+                fileOutputStream.write(bytes);
+                fileOutputStream.flush();
+                fileOutputStream.close();
+            }
+
         } else if (onePassSignatureList != null && signatureList != null) {
 
             PGPOnePassSignature onePassSignature = onePassSignatureList.get(0);
@@ -758,6 +780,9 @@ public class PGP {
             logger.info("PGPPublicKeyEncryptedData no integrity check");
             ret[1] = 0;
         }
+        fileInput.close();
+        secretKeyInput.close();
+        publicKeyInput.close();
         return ret;
     }
 

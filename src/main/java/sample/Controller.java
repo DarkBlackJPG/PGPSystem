@@ -152,7 +152,7 @@ public class Controller {
         symmetricAlgorithms.add(idea);
 
         symmetricAlgorithmsHashMap.put(tripleDES, SymmetricKeyAlgorithmTags.TRIPLE_DES);
-        symmetricAlgorithmsHashMap.put(tripleDES, SymmetricKeyAlgorithmTags.IDEA);
+        symmetricAlgorithmsHashMap.put(idea, SymmetricKeyAlgorithmTags.IDEA);
 
         asymmetricAlgorithms.add(rsa1024);
         asymmetricAlgorithms.add(rsa2048);
@@ -292,7 +292,8 @@ public class Controller {
             PGPSecretKey pgpSecretKey = keyManager.getSecretKeyById(keyID.longValue());
             return pgpSecretKey;
         } catch (PGPException e) {
-            showErrorDialog("Error getting key", "Error encountered while searching for key with ID " + keyID, e.getMessage());
+            showErrorDialog("Error getting key",
+                            "Error encountered while searching for key with ID " + keyID, e.getMessage());
         }
         return null;
     }
@@ -555,7 +556,8 @@ public class Controller {
         if (!fileToDecrypt.exists() || !fileToDecrypt.isFile()) {
             showErrorDialog("Input parameters are incorrect!",
                     "Incorrect filepath",
-                    "You have to specify the correct file path and/or the file doesn't exist!");
+                    "You have to specify the correct file path. The file doesn't exist or it's a folder!");
+            browseDecryptionFileLocationTextField.requestFocus();
             return;
         }
 
@@ -563,29 +565,32 @@ public class Controller {
         if(!outFile.isBlank()) {
             decryptedFile = new File(outFile);
             if (decryptedFile.exists()) {
-                showErrorDialog("Input parameters are incorrect!",
+                if(!showConfirmationDialog("File already exists!",
                         "Incorrect filepath",
-                        "Decrypted file already exists!");
-                return;
+                        "Decrypted file already exists. Do you wish to overwrite it?")){
+                    decryptionFileLocationTextField.requestFocus();
+                    return;
+                }
             }
             outFile = decryptedFile.getAbsolutePath();
         } else {
-            outFile = FilenameUtils.getBaseName(fileToDecrypt.getName());
+            outFile = FilenameUtils.getFullPath(fileToDecrypt.getAbsolutePath()) +
+                    FilenameUtils.getBaseName(fileToDecrypt.getName());
             decryptedFile = new File(outFile);
             if (decryptedFile.exists()) {
-                showErrorDialog("Input parameters are incorrect!",
+                if(!showConfirmationDialog("File already exists!",
                         "Incorrect filepath",
-                        "Decrypted file already exists!");
-                return;
+                        "Decrypted file already exists. Do you wish to overwrite it?")){
+                    decryptionFileLocationTextField.requestFocus();
+                    return;
+                }
             }
-            outFile = decryptedFile.getAbsolutePath();
         }
 
         String passphrase = passwordInputDialogBox();
         if(passphrase.isBlank()){
-            showErrorDialog("Input parameters are incorrect!",
-                    "No passphrase entered!",
-                    "You must insert your passphrase!");
+            passwordInputDialogBoxWithText("You must enter a passphrase!");
+            decryptAndVerifyButton.requestFocus();
             return;
         }
         try {
@@ -604,6 +609,10 @@ public class Controller {
                 case 2:
                     verificationAndIntegrity[0] = "failed";
                     break;
+                case 3:
+                    passwordInputDialogBoxWithText("Invalid passphrase!");
+                    decryptAndVerifyButton.requestFocus();
+                    return;
                 default:
                     showErrorDialog("Decryption failed!",
                             "Signature verification!",
