@@ -588,7 +588,7 @@ public class Controller {
         }
 
         String passphrase = passwordInputDialogBox();
-        if(passphrase.isBlank()){
+        if(passphrase == null || passphrase.isBlank()){
             passwordInputDialogBoxWithText("You must enter a passphrase!");
             decryptAndVerifyButton.requestFocus();
             return;

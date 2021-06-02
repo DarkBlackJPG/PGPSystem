@@ -65,7 +65,6 @@ class PGP_test {
 //            System.out.println("\nradix64 = " + radix64 + " compress = " + compress);
 
 
-
 /*************************************** ENCRYPT AND DECRYPT *****************************************/
             System.out.println();
             //////////////////////////ENCRYPTION//////////////////////////////////////
@@ -76,7 +75,7 @@ class PGP_test {
                                         .getSecretKey(Long.parseUnsignedLong("8478D0C4EA0B91D7",16))
                                         .getPublicKey();
             fileName = PGP.encryptFile(file, new PGPPublicKey[]{publicKey},
-            SymmetricKeyAlgorithmTags.TRIPLE_DES, radix64, compress);
+                            SymmetricKeyAlgorithmTags.TRIPLE_DES, radix64, compress);
             input = new FileInputStream(fileName);
             System.out.println("Encrypted file:");
             System.out.println("===================================================");
@@ -84,7 +83,8 @@ class PGP_test {
             input.close();
             System.out.println();
             //////////////////////////DECRYPTION//////////////////////////////////////
-            PGP.decryptFile(fileASC, KeyringManager.privateKeyFile, pass, outputFileName);
+            PGP.decryptionAndVerification(fileASC, pass, outputFileName);
+//            PGP.decryptFile(fileASC, KeyringManager.privateKeyFile, pass, outputFileName);
             System.out.println("Decrypted file:");
             System.out.println("===================================================");
             input = new FileInputStream(file);
