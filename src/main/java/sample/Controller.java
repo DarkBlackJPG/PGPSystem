@@ -613,6 +613,15 @@ public class Controller {
                     passwordInputDialogBoxWithText("Invalid passphrase!");
                     decryptAndVerifyButton.requestFocus();
                     return;
+                case 4:
+                    verificationAndIntegrity[0] = "private key not found";
+                    break;
+                case 5:
+                    verificationAndIntegrity[0] = "public key not found";
+                    break;
+                case 6:
+                    verificationAndIntegrity[0] = "signature invalid";
+                    break;
                 default:
                     showErrorDialog("Decryption failed!",
                             "Signature verification!",
@@ -641,7 +650,7 @@ public class Controller {
                         "Signature verification & integrity check",
                         "Signature verification: " + verificationAndIntegrity[0] +
                                 " integrity check: " + verificationAndIntegrity[1]);
-            } else if (decryptionResult[0] == 2 || decryptionResult[1] == 2){
+            } else if (decryptionResult[0] >= 2 || decryptionResult[1] >= 2){
                 showErrorDialog("Decryption succeeded!",
                         "Signature verification & integrity check",
                         "Signature verification: " + verificationAndIntegrity[0] +
