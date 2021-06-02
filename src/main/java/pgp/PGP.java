@@ -124,9 +124,11 @@ public class PGP {
      * @param fileName {@code String} used to make a new decoded {@link File}
      *                       if file name not present use one from encoded data
      * @return {@code int[]}   <p>{@code ret[0] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1}<i>verified</i>,
-     *                          {@code 2} <i>failed</i> - <b>signature verification</b></p>
-     *                           <p>{@code ret[1] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1} <i>passed</i>,
-     *                              {@code 2} <i>failed</i> - <b>integrity check</b></p>
+     *                          {@code 2} <i>failed</i> {@code 3} <i>wrong passphrase</i>
+     *                           {@code 4} <i>no private key</i> {@code 5} <i>no public key</i>
+     *                            {@code 6} <i>signature invalid</i> signature invalid - <b>signature verification</b></p>
+     *                        <p>{@code ret[1] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1} <i>passed</i>,
+     *                            {@code 2} <i>failed</i> - <b>integrity check</b></p>
      * @throws IOException
      * @throws PGPException
      * @throws SignatureException
@@ -134,10 +136,6 @@ public class PGP {
     public static int[] decryptionAndVerification(String inputFileName,
                                                      String passphrase,
                                                      String fileName) throws PGPException, IOException, SignatureException {
-        int[] ret = new int[3];
-        ret[0] = verifyFile(inputFileName, publicKeyFile, fileName);
-
-        decryptFile(inputFileName, privateKeyFile, passphrase, fileName);
         return decryptAndVerify(inputFileName, privateKeyFile, publicKeyFile, passphrase, fileName);
     }
 
@@ -751,11 +749,14 @@ public class PGP {
                 if (fileName.isBlank()) {
                     outputFileName = literalData.getFileName();
                 }
-                OutputStream BufferedFileOutputStream = new BufferedOutputStream(new FileOutputStream(outputFileName));
+                FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
+                OutputStream BufferedFileOutputStream = new BufferedOutputStream(fileOutputStream);
 
                 BufferedFileOutputStream.write(bytes);
                 BufferedFileOutputStream.flush();
                 BufferedFileOutputStream.close();
+                fileOutputStream.flush();
+                fileOutputStream.close();
                 break;
             } else {
                 logger.info("bad data in stream");
