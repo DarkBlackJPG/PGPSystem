@@ -739,7 +739,8 @@ public class PGP {
             if (object instanceof PGPLiteralData) {
                 logger.info("Object instance of PGPLiteralData");
                 literalData = (PGPLiteralData) object;
-                byte[] bytes = literalData.getDataStream().readAllBytes();
+                InputStream literalDataStream = literalData.getDataStream();
+                byte[] bytes = literalDataStream.readAllBytes();
 
                 if(onePassSignature != null) {
                     onePassSignature.update(bytes);
@@ -757,12 +758,15 @@ public class PGP {
                 BufferedFileOutputStream.close();
                 fileOutputStream.flush();
                 fileOutputStream.close();
+
+                literalDataStream.close();
                 break;
             } else {
                 logger.info("bad data in stream");
                 throw new RuntimeException("bad message " + object.getClass().getName());
             }
         }
+
         if(onePassSignature == null && onePassSignatureList == null){
             logger.info("no signature present");
             ret[0] = 0;
@@ -783,6 +787,8 @@ public class PGP {
 //                    throw new SignatureException("Signature verification failed");
                 ret[0] = 2;
             }
+        } else {
+            logger.info("signature error");
         }
 
         if (publicKeyEncryptedData != null) {

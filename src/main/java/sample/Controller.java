@@ -553,10 +553,11 @@ public class Controller {
     public void startDecryptionAndVerificationButton(ActionEvent actionEvent) {
         File decryptedFile = null;
         File fileToDecrypt = new File(browseDecryptionFileLocationTextField.getText());
-        if (!fileToDecrypt.exists() || !fileToDecrypt.isFile()) {
+        if (!fileToDecrypt.exists() || !fileToDecrypt.isFile() || !fileToDecrypt.canRead()) {
             showErrorDialog("Input parameters are incorrect!",
                     "Incorrect filepath",
-                    "You have to specify the correct file path. The file doesn't exist or it's a folder!");
+                    "You have to specify the correct file path. The file doesn't exist, " +
+                            "it's a folder or you don't have permission to read it!");
             browseDecryptionFileLocationTextField.requestFocus();
             return;
         }
@@ -571,6 +572,7 @@ public class Controller {
                     decryptionFileLocationTextField.requestFocus();
                     return;
                 }
+                decryptedFile.delete();
             }
             outFile = decryptedFile.getAbsolutePath();
         } else {
