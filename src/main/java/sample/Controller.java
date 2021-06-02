@@ -21,10 +21,13 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.util.io.Streams;
 import pgp.PGP;
 import utility.KeyManager.ExportedKeyData;
 import utility.KeyManager.KeyringManager;
 import utility.RSA;
+import utility.helper.DecryptionVerificationWrapper;
+import utility.helper.DecryptionVerificationWrapper.*;
 import utility.helper.EncryptionWrapper;
 import utility.helper.PasswordDialog;
 
@@ -129,9 +132,9 @@ public class Controller {
     private List<String> symmetricAlgorithms = new ArrayList<>();
     private List<String> asymmetricAlgorithms = new ArrayList<>();
     private ObservableList<ExportedKeyData> allKeys = FXCollections.observableArrayList();
-
+    private static String defaultOutFileDecrypt = "123.";
     KeyringManager keyManager;
-    
+
 
     // Sluzi za parsiranje stringa prilikom odabira iz choice box-a za novi tajni kljuc
     private HashMap<String, RSA.KeySizes> rsaKeySizesHashMap = new HashMap<>();
@@ -562,32 +565,9 @@ public class Controller {
             return;
         }
 
-        String outFile = decryptionFileLocationTextField.getText();
-        if(!outFile.isBlank()) {
-            decryptedFile = new File(outFile);
-            if (decryptedFile.exists()) {
-                if(!showConfirmationDialog("File already exists!",
-                        "Incorrect filepath",
-                        "Decrypted file already exists. Do you wish to overwrite it?")){
-                    decryptionFileLocationTextField.requestFocus();
-                    return;
-                }
-                decryptedFile.delete();
-            }
-            outFile = decryptedFile.getAbsolutePath();
-        } else {
-            outFile = FilenameUtils.getFullPath(fileToDecrypt.getAbsolutePath()) +
-                    FilenameUtils.getBaseName(fileToDecrypt.getName());
-            decryptedFile = new File(outFile);
-            if (decryptedFile.exists()) {
-                if(!showConfirmationDialog("File already exists!",
-                        "Incorrect filepath",
-                        "Decrypted file already exists. Do you wish to overwrite it?")){
-                    decryptionFileLocationTextField.requestFocus();
-                    return;
-                }
-            }
-        }
+        String outFile = defaultOutFileDecrypt +
+                FilenameUtils.getExtension(FilenameUtils.getBaseName(fileToDecrypt.getName()));
+        defaultOutFileDecrypt = outFile;
 
         String passphrase = passwordInputDialogBox();
         if(passphrase == null || passphrase.isBlank()){
@@ -596,32 +576,30 @@ public class Controller {
             return;
         }
         try {
-            int[] decryptionResult = PGP.decryptionAndVerification(fileToDecrypt.getAbsolutePath(),
+            DecryptionVerificationWrapper decryptionResult = PGP.decryptionAndVerification(fileToDecrypt.getAbsolutePath(),
                     passphrase, outFile);
 
             String[] verificationAndIntegrity = new String[2];
             //signature verification
-            switch (decryptionResult[0]) {
-                case 0:
+            VerificationCode verificationCode = decryptionResult.getVerificationCode();
+            switch (decryptionResult.getVerificationCode()) {
+                case NOT_PRESENT:
                     verificationAndIntegrity[0] = "not present";
                     break;
-                case 1:
+                case VERIFIED:
                     verificationAndIntegrity[0] = "verified";
                     break;
-                case 2:
+                case FAILED:
                     verificationAndIntegrity[0] = "failed";
                     break;
-                case 3:
+                case WRONG_PASSPHRASE:
                     passwordInputDialogBoxWithText("Invalid passphrase!");
                     decryptAndVerifyButton.requestFocus();
                     return;
-                case 4:
+                case NO_PRIVATE_KEY:
                     verificationAndIntegrity[0] = "private key not found";
                     break;
-                case 5:
-                    verificationAndIntegrity[0] = "public key not found";
-                    break;
-                case 6:
+                case INVALID:
                     verificationAndIntegrity[0] = "signature invalid";
                     break;
                 default:
@@ -631,49 +609,65 @@ public class Controller {
                     return;
             }
             //integrity check
-            switch (decryptionResult[1]) {
-                case 0:
+            DecryptionCode decryptionCode = decryptionResult.getDecryptionCode();
+            switch (decryptionCode) {
+                case NO_INTEGRITY_CHECK:
                     verificationAndIntegrity[1] = "not present";
                     break;
-                case 1:
+                case NOT_ENCRYPTED:
+                    verificationAndIntegrity[1] = "not encrypted";
+                    break;
+                case PASSED:
                     verificationAndIntegrity[1] = "passed";
                     break;
-                case 2:
+                case FAILED:
                     verificationAndIntegrity[1] = "failed";
+                    break;
+                case NO_PUBLIC_KEY:
+                    verificationAndIntegrity[1] = "no public key found";
                     break;
                 default:
                     showErrorDialog("Decryption failed!",
-                            "Signature verification!",
-                            "Error occurred during signature verification!");
+                            "Decryption",
+                            "Error occurred during decryption!");
                     return;
             }
-            if (decryptionResult[0] == 0 || decryptionResult[1] == 0){
-                showWarningDialog("Decryption succeeded!",
-                        "Signature verification & integrity check",
-                        "Signature verification: " + verificationAndIntegrity[0] +
-                                " integrity check: " + verificationAndIntegrity[1]);
-            } else if (decryptionResult[0] >= 2 || decryptionResult[1] >= 2){
-                showErrorDialog("Decryption succeeded!",
-                        "Signature verification & integrity check",
-                        "Signature verification: " + verificationAndIntegrity[0] +
-                                " integrity check: " + verificationAndIntegrity[1]);
+            String signatureString = null;
+            ExportedKeyData keyData = decryptionResult.getExportedKeyData();
+            if (keyData != null) {
+                signatureString = "\nSignature username <" + keyData.getUserName() + "> email: " +
+                    keyData.getEmail() + "valid until: " + keyData.getValidUntil();
+            }
+            String title = "Decryption succeeded!";
+            String header = "Signature verification & integrity check";
+            String text = "Signature verification: " + verificationAndIntegrity[0] +
+                    " integrity check: " + verificationAndIntegrity[1] + signatureString;
+
+            if (DecryptionCode.containsWarnings(decryptionCode) ||
+                VerificationCode.containsWarnings(verificationCode)){
+                showWarningDialog(title,
+                        header,
+                        text);
+            } else if (DecryptionCode.containsErrors(decryptionCode) ||
+                    VerificationCode.containsErrors(verificationCode)){
+                showErrorDialog(title,
+                        header,
+                        text);
             } else {
-                showSuccessDialog("Decryption succeeded!",
-                        "Signature verification & integrity check",
-                        "Signature verification: " + verificationAndIntegrity[0] +
-                                " integrity check: " + verificationAndIntegrity[1]);
+                showSuccessDialog(title,
+                        header,
+                        text);
             }
 
             InputStream in = new FileInputStream(outFile);
             displayDecryptionAndVerificationOutputTextField.setText(new String(in.readAllBytes()));
             displayDecryptionAndVerificationOutputTextField.setWrapText(true);
             in.close();
-
         } catch (Exception e){
             e.printStackTrace();
-            showExceptionDialog("Decryption",
-                    "Decryption exception",
-                    "An exception during decryption has occured. See stacktrace for more details.",
+            showExceptionDialog("Decryption and Verification",
+                    "Exception",
+                    "An exception during decryption has occurred. See stacktrace for more details.",
                     e);
         }
     }
@@ -698,30 +692,38 @@ public class Controller {
      *
      * @param actionEvent
      */
-    /*public void saveDecryptedFile(ActionEvent actionEvent) {
+    public void saveDecryptedFile(ActionEvent actionEvent) {
         String fileLocation = decryptionFileLocationTextField.getText();
-        if (fileLocation.length() == 0) {
+        File newFile = new File(fileLocation);
+        if (fileLocation.isBlank() || newFile.isDirectory()) {
             showErrorDialog("Input parameters are incorrect!",
                             "Incorrect filepath",
                             "You have to specify the correct file path!");
             return;
         }
-        File newFile = new File(fileLocation);
+        if(newFile.exists() && newFile.isFile()){
+            if(!showConfirmationDialog("Input parameters are incorrect",
+                    "File already exists",
+                    "Do you wish to overwrite it?")){
+                decryptionFileLocationTextField.requestFocus();
+                return;
+            }
+        }
 
         try (OutputStream os = new FileOutputStream(newFile)) {
             newFile.createNewFile();
-
-            // TODO [INTEGRACIJA] Implementirati cuvanje dekriptovanog fajla sa OutputStreamom
-
-            // --------| CODE GOES HERE
-            // ....
-            // --------|
+            FileInputStream in = new FileInputStream(defaultOutFileDecrypt);
+            Streams.pipeAll(in, os);
+            os.flush();
+            os.close();
+            in.close();
+            new File(defaultOutFileDecrypt).delete();
         } catch (IOException e) {
             showErrorDialog("Input parameters are incorrect!",
                             "Incorrect filepath",
                             "You have to specify the correct file path!");
         }
-    }*/
+    }//*/
 
     /**
      * Otvara directory chooser (TO ZNACI DA TREBA POSTAVITI NEKAKO NAZIV .asc FAJLA INTERNO)

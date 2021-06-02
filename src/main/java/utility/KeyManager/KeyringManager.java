@@ -307,7 +307,7 @@ public class KeyringManager implements Keyring {
      * @param pgpRing
      * @return
      */
-    private ExportedKeyData extractDataFromKey(PGPKeyRing pgpRing) {
+    public static ExportedKeyData extractDataFromKey(PGPKeyRing pgpRing) {
         ExportedKeyData keyData = new ExportedKeyData();
         PGPPublicKey pgp = pgpRing.getPublicKey();
         String userID = pgp.getUserIDs().next();
