@@ -132,7 +132,8 @@ public class Controller {
     private List<String> symmetricAlgorithms = new ArrayList<>();
     private List<String> asymmetricAlgorithms = new ArrayList<>();
     private ObservableList<ExportedKeyData> allKeys = FXCollections.observableArrayList();
-    private static String defaultOutFileDecrypt = "123.";
+    private static final String outFileDecrypt =  "123.";
+    private String defaultOutFileDecrypt = outFileDecrypt;
     KeyringManager keyManager;
 
 
@@ -168,6 +169,7 @@ public class Controller {
         try {
             keyManager = new KeyringManager();
             Main.keyManagerReference = keyManager;
+            Main.controllerReference = this;
         } catch (Exception e) {
             showErrorDialog("Error encountered",
                     "Error trying to open keyring files",
@@ -364,10 +366,13 @@ public class Controller {
                 return;
             }
             passphrase = passwordInputDialogBox();
-            if(passphrase.isBlank()){
-                showErrorDialog("Input parameters are incorrect!",
-                        "No passphrase entered!",
-                        "You must insert your passphrase!");
+            while(passphrase.isBlank()){
+                passphrase = passwordInputDialogBoxWithText("Invalid passphrase!");
+            }
+            if(passphrase == null){
+                showWarningDialog("Cancel",
+                        "Incorrect passphrase",
+                        "You have to enter the correct passphrase in order to sign the file.");
                 return;
             }
             signKeyID = Long.parseUnsignedLong(parseSignatureSelectionToString(signature)[2], 16);
@@ -554,7 +559,6 @@ public class Controller {
      * @param actionEvent
      */
     public void startDecryptionAndVerificationButton(ActionEvent actionEvent) {
-        File decryptedFile = null;
         File fileToDecrypt = new File(browseDecryptionFileLocationTextField.getText());
         if (!fileToDecrypt.exists() || !fileToDecrypt.isFile() || !fileToDecrypt.canRead()) {
             showErrorDialog("Input parameters are incorrect!",
@@ -564,17 +568,12 @@ public class Controller {
             browseDecryptionFileLocationTextField.requestFocus();
             return;
         }
-
+        defaultOutFileDecrypt = outFileDecrypt;
         String outFile = defaultOutFileDecrypt +
                 FilenameUtils.getExtension(FilenameUtils.getBaseName(fileToDecrypt.getName()));
         defaultOutFileDecrypt = outFile;
+        String passphrase = "";
 
-        String passphrase = passwordInputDialogBox();
-        if(passphrase == null || passphrase.isBlank()){
-            passwordInputDialogBoxWithText("You must enter a passphrase!");
-            decryptAndVerifyButton.requestFocus();
-            return;
-        }
         try {
             DecryptionVerificationWrapper decryptionResult = PGP.decryptionAndVerification(fileToDecrypt.getAbsolutePath(),
                     passphrase, outFile);
@@ -582,7 +581,18 @@ public class Controller {
             String[] verificationAndIntegrity = new String[2];
             //signature verification
             VerificationCode verificationCode = decryptionResult.getVerificationCode();
-            switch (decryptionResult.getVerificationCode()) {
+            while(verificationCode == VerificationCode.WRONG_PASSPHRASE){
+                passphrase = passwordInputDialogBoxWithText("Invalid passphrase!");
+                if(passphrase == null || passphrase.isBlank()){
+                    passwordInputDialogBoxWithText("You must enter a passphrase!");
+                    decryptAndVerifyButton.requestFocus();
+                    return;
+                }
+                decryptionResult = PGP.decryptionAndVerification(fileToDecrypt.getAbsolutePath(),
+                        passphrase, outFile);
+                verificationCode = decryptionResult.getVerificationCode();
+            }
+            switch (verificationCode) {
                 case NOT_PRESENT:
                     verificationAndIntegrity[0] = "not present";
                     break;
@@ -592,10 +602,6 @@ public class Controller {
                 case FAILED:
                     verificationAndIntegrity[0] = "failed";
                     break;
-                case WRONG_PASSPHRASE:
-                    passwordInputDialogBoxWithText("Invalid passphrase!");
-                    decryptAndVerifyButton.requestFocus();
-                    return;
                 case NO_PRIVATE_KEY:
                     verificationAndIntegrity[0] = "private key not found";
                     break;
@@ -632,11 +638,11 @@ public class Controller {
                             "Error occurred during decryption!");
                     return;
             }
-            String signatureString = null;
+            String signatureString = "";
             ExportedKeyData keyData = decryptionResult.getExportedKeyData();
             if (keyData != null) {
-                signatureString = "\nSignature username <" + keyData.getUserName() + "> email: " +
-                    keyData.getEmail() + "valid until: " + keyData.getValidUntil();
+                signatureString = "\nSignature username: " + keyData.getUserName() + " \nemail: <" +
+                    keyData.getEmail() + "> \nkey ID: " + keyData.getKeyIDHex();
             }
             String title = "Decryption succeeded!";
             String header = "Signature verification & integrity check";
@@ -1216,5 +1222,10 @@ public class Controller {
 
         alert.showAndWait();
     }
-
+    public void deleteDefaultOutputFile(){
+        File file = new File(defaultOutFileDecrypt);
+        if(file.exists()){
+            file.delete();
+        }
+    }
 }

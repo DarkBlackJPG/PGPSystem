@@ -643,8 +643,8 @@ public class PGP {
         InputStream fileInput = new BufferedInputStream(new FileInputStream(inputFileName));
         InputStream secretKeyInput = new BufferedInputStream(new FileInputStream(secretKeyFileName));
         InputStream publicKeyInput = new BufferedInputStream(new FileInputStream(publicKeyFileName));
-
-        PGPObjectFactory pgpObjects = new PGPObjectFactory(PGPUtil.getDecoderStream(fileInput),
+        InputStream in = PGPUtil.getDecoderStream(fileInput);
+        PGPObjectFactory pgpObjects = new PGPObjectFactory(in,
                 new JcaKeyFingerprintCalculator());
 
         PGPCompressedData compressedData = null;
@@ -692,6 +692,7 @@ public class PGP {
                         logger.info("wrong passphrase");
                         verificationCode = VerificationCode.WRONG_PASSPHRASE;
                         fileInput.close();
+                        in.close();
                         secretKeyInput.close();
                         publicKeyInput.close();
                         return new DecryptionVerificationWrapper(exportedKeyData,
@@ -702,6 +703,7 @@ public class PGP {
                     logger.info("no private key found");
                     verificationCode = VerificationCode.NO_PRIVATE_KEY;
                     fileInput.close();
+                    in.close();
                     secretKeyInput.close();
                     publicKeyInput.close();
                     return new DecryptionVerificationWrapper(exportedKeyData,
@@ -727,6 +729,7 @@ public class PGP {
                     logger.info("no public key found");
                     decryptionCode = DecryptionCode.NO_PUBLIC_KEY;
                     fileInput.close();
+                    in.close();
                     secretKeyInput.close();
                     publicKeyInput.close();
                     return new DecryptionVerificationWrapper(exportedKeyData,
@@ -736,6 +739,7 @@ public class PGP {
                     logger.info("signature invalid");
                     verificationCode = VerificationCode.INVALID;
                     fileInput.close();
+                    in.close();
                     secretKeyInput.close();
                     publicKeyInput.close();
                     return new DecryptionVerificationWrapper(exportedKeyData,
@@ -819,6 +823,7 @@ public class PGP {
         }
 
         fileInput.close();
+        in.close();
         secretKeyInput.close();
         publicKeyInput.close();
         return new DecryptionVerificationWrapper(exportedKeyData,

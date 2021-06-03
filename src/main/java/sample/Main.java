@@ -15,6 +15,7 @@ public class Main extends Application {
     // Sluzi da mozemo da otvorimo file explorer u controlleru, zahteva stage
     static Main mainReference;
     static KeyringManager keyManagerReference;
+    static Controller controllerReference;
     Stage currentStage;
 
     @Override
@@ -34,6 +35,7 @@ public class Main extends Application {
     public void stop()  {
         try {
             keyManagerReference.saveKeys();
+            controllerReference.deleteDefaultOutputFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
