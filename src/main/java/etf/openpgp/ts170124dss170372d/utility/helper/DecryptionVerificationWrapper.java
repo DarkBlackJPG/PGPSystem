@@ -1,9 +1,13 @@
-package utility.helper;
+package etf.openpgp.ts170124dss170372d.utility.helper;
 
-import utility.KeyManager.ExportedKeyData;
+
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.ExportedKeyData;
 
 import java.util.EnumSet;
 
+/**
+ * Class for the return data of file verification and decryption
+ */
 public class DecryptionVerificationWrapper {
     private ExportedKeyData exportedKeyData;
     private DecryptionCode decryptionCode;

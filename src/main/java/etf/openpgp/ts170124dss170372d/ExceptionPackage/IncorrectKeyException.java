@@ -1,4 +1,4 @@
-package ExceptionPackage;
+package etf.openpgp.ts170124dss170372d.ExceptionPackage;
 
 public class IncorrectKeyException extends Exception {
     private String exceptionMessage = "Incorrect key provided!";

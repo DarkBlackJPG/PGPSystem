@@ -1,4 +1,4 @@
-package utility;
+package etf.openpgp.ts170124dss170372d.utility;
 
 public class User {
     private static User userInstance;

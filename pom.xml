@@ -105,7 +105,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.3</version>
                 <configuration>
-                    <mainClass>main.java.sample.Main</mainClass>
+                    <mainClass>main.java.etf.openpgp.ts170124dss170372d.sample.Main</mainClass>
                     <launcher>launch</launcher>
                     <noHeaderFiles>true</noHeaderFiles>
                     <noManPages>true</noManPages>

@@ -1,10 +1,6 @@
-import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.KeyringManager;
+import etf.openpgp.ts170124dss170372d.utility.RSA;
 import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
-import org.bouncycastle.util.io.Streams;
-import pgp.PGP;
-import utility.KeyManager.KeyringManager;
-import utility.RSA;
 
 import java.io.*;
 
@@ -14,7 +10,7 @@ class PGP_test {
     private static String email = "test@testicle.com";
     private static String pass = "pwd";
     private static String file = "C:\\Users\\Korisnik\\Desktop\\1.txt";
-    private static String filePGP = "EncryptionTest.txt.pgp";
+    private static String filePGP = "EncryptionTest.txt.etf.openpgp.ss170372d.pgp";
     private static String fileASC = "C:\\Users\\Korisnik\\Desktop\\1.txt.asc";
     private static String outputFileName = "123.txt";
 
@@ -28,22 +24,22 @@ class PGP_test {
 
         try {
 /*************************************** KEY GENERATION *****************************************/
-//            //////////////////GENERATE KEY PAIR//////////////////////////////
-//            KeyringManager keyringManager = new KeyringManager();
-//            for (int i = 0; i < 25; i++) {
-//                masterKey = RSA.RSA_GetUtility()
-//                        .RSA_SetKeySize(RSA.KeySizes.RSA4096)
-//                        .RSA_PGPKeyGenerator();
-//                signingKey = RSA.RSA_GetUtility()
-//                        .RSA_SetKeySize(RSA.KeySizes.RSA4096)
-//                        .RSA_PGPKeyGenerator();
-//                keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
-//                System.out.println(i);
-//            }
-//            PGPPublicKey publicKey = signingKey.getPublicKey();
-//            PGPPrivateKey privateKey = signingKey.getPrivateKey();
-//
-//            System.out.println("Done making keys");
+            //////////////////GENERATE KEY PAIR//////////////////////////////
+            KeyringManager keyringManager = new KeyringManager();
+            for (int i = 0; i < 25; i++) {
+                masterKey = RSA.RSA_GetUtility()
+                        .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                        .RSA_PGPKeyGenerator();
+                signingKey = RSA.RSA_GetUtility()
+                        .RSA_SetKeySize(RSA.KeySizes.RSA4096)
+                        .RSA_PGPKeyGenerator();
+                keyringManager.makeKeyPairs(masterKey, signingKey, name, email, pass);
+                System.out.println(i);
+            }
+            PGPPublicKey publicKey = signingKey.getPublicKey();
+            PGPPrivateKey privateKey = signingKey.getPrivateKey();
+
+            System.out.println("Done making keys");
 /*************************************** SIGN AND VERIFY *****************************************/
 //            System.out.println();
 //            //////////////////////////SIGN//////////////////////////////////////
@@ -66,31 +62,31 @@ class PGP_test {
 
 
 /*************************************** ENCRYPT AND DECRYPT *****************************************/
-            System.out.println();
-            //////////////////////////ENCRYPTION//////////////////////////////////////
-            PGPSecretKeyRingCollection secretKeyRingCollection = new PGPSecretKeyRingCollection(
-                    PGPUtil.getDecoderStream(new FileInputStream(KeyringManager.privateKeyFile)),
-                    new JcaKeyFingerprintCalculator());
-            PGPPublicKey publicKey = secretKeyRingCollection
-                                        .getSecretKey(Long.parseUnsignedLong("8478D0C4EA0B91D7",16))
-                                        .getPublicKey();
-            fileName = PGP.encryptFile(file, new PGPPublicKey[]{publicKey},
-                            SymmetricKeyAlgorithmTags.TRIPLE_DES, radix64, compress);
-            input = new FileInputStream(fileName);
-            System.out.println("Encrypted file:");
-            System.out.println("===================================================");
-            Streams.pipeAll(input, System.out);
-            input.close();
-            System.out.println();
-            //////////////////////////DECRYPTION//////////////////////////////////////
-            PGP.decryptionAndVerification(fileASC, pass, outputFileName);
-//            PGP.decryptFile(fileASC, KeyringManager.privateKeyFile, pass, outputFileName);
-            System.out.println("Decrypted file:");
-            System.out.println("===================================================");
-            input = new FileInputStream(file);
-            Streams.pipeAll(input, System.out);
-            input.close();
-            System.out.println("\nradix64 = " + radix64 + " compress = " + compress);
+//            System.out.println();
+//            //////////////////////////ENCRYPTION//////////////////////////////////////
+//            PGPSecretKeyRingCollection secretKeyRingCollection = new PGPSecretKeyRingCollection(
+//                    PGPUtil.getDecoderStream(new FileInputStream(KeyringManager.privateKeyFile)),
+//                    new JcaKeyFingerprintCalculator());
+//            PGPPublicKey publicKey = secretKeyRingCollection
+//                                        .getSecretKey(Long.parseUnsignedLong("8478D0C4EA0B91D7",16))
+//                                        .getPublicKey();
+//            fileName = PGP.encryptFile(file, new PGPPublicKey[]{publicKey},
+//                            SymmetricKeyAlgorithmTags.TRIPLE_DES, radix64, compress);
+//            input = new FileInputStream(fileName);
+//            System.out.println("Encrypted file:");
+//            System.out.println("===================================================");
+//            Streams.pipeAll(input, System.out);
+//            input.close();
+//            System.out.println();
+//            //////////////////////////DECRYPTION//////////////////////////////////////
+//            PGP.decryptionAndVerification(fileASC, pass, outputFileName);
+////            PGP.decryptFile(fileASC, KeyringManager.privateKeyFile, pass, outputFileName);
+//            System.out.println("Decrypted file:");
+//            System.out.println("===================================================");
+//            input = new FileInputStream(file);
+//            Streams.pipeAll(input, System.out);
+//            input.close();
+//            System.out.println("\nradix64 = " + radix64 + " compress = " + compress);
 
 
 

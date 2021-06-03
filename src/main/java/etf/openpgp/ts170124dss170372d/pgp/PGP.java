@@ -1,5 +1,6 @@
-package pgp;
+package etf.openpgp.ts170124dss170372d.pgp;
 
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.ExportedKeyData;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.bouncycastle.bcpg.*;
@@ -8,12 +9,12 @@ import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 import org.bouncycastle.util.io.Streams;
-import utility.KeyManager.ExportedKeyData;
-import utility.KeyManager.KeyringManager;
-import utility.PGPutil;
-import utility.helper.DecryptionVerificationWrapper;
-import utility.helper.DecryptionVerificationWrapper.*;
-import utility.helper.EncryptionWrapper;
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.Keyring;
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.KeyringManager;
+import etf.openpgp.ts170124dss170372d.utility.PGPutil;
+import etf.openpgp.ts170124dss170372d.utility.helper.DecryptionVerificationWrapper;
+import etf.openpgp.ts170124dss170372d.utility.helper.DecryptionVerificationWrapper.*;
+import etf.openpgp.ts170124dss170372d.utility.helper.EncryptionWrapper;
 
 import java.io.*;
 import java.security.SecureRandom;
@@ -126,19 +127,14 @@ public class PGP {
      * @param passphrase {@code String} used to decode the {@link PGPSecretKey}
      * @param fileName {@code String} used to make a new decoded {@link File}
      *                       if file name not present use one from encoded data
-     * @return {@code int[]}   <p>{@code ret[0] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1}<i>verified</i>,
-     *                          {@code 2} <i>failed</i> {@code 3} <i>wrong passphrase</i>
-     *                           {@code 4} <i>no private key</i> {@code 5} <i>no public key</i>
-     *                            {@code 6} <i>signature invalid</i> signature invalid - <b>signature verification</b></p>
-     *                        <p>{@code ret[1] -1} <i>error</i>, {@code 0} <i>not present</i>, {@code 1} <i>passed</i>,
-     *                            {@code 2} <i>failed</i> - <b>integrity check</b></p>
+     * @return {@link DecryptionVerificationWrapper}
      * @throws IOException
      * @throws PGPException
      * @throws SignatureException
      */
     public static DecryptionVerificationWrapper decryptionAndVerification(String inputFileName,
                                                      String passphrase,
-                                                     String fileName) throws PGPException, IOException, SignatureException {
+                                                     String fileName) throws PGPException, IOException {
         return decryptAndVerify(inputFileName, privateKeyFile, publicKeyFile, passphrase, fileName);
     }
 
@@ -154,7 +150,7 @@ public class PGP {
      * @throws IOException
      * @throws PGPException
      */
-    public static String encryptFile(String fileToEncrypt,
+    private static String encryptFile(String fileToEncrypt,
                             PGPPublicKey[] publicKeys,
                             int algorithm,
                             boolean compress,
@@ -219,7 +215,7 @@ public class PGP {
      *                       if file name not present in encoded data
      * @throws IOException
      */
-    public static void decryptFile(String inputFileName,
+    private static void decryptFile(String inputFileName,
                             String secretKeyFileName,
                             String passphrase,
                             String fileName) throws IOException, PGPException {
@@ -269,12 +265,12 @@ public class PGP {
                     "Wrong PGPSecretKeyRingCollection or PGPPublicKeyEncryptedData");
         }
 
-        PublicKeyDataDecryptorFactory decryptor = new JcePublicKeyDataDecryptorFactoryBuilder()
+        PublicKeyDataDecryptorFactory decrypt = new JcePublicKeyDataDecryptorFactoryBuilder()
                 .setProvider(PROVIDER)
                 .build(privateKey);
 
         // Decrypted input stream
-        InputStream decrypted = publicKeyEncryptedData.getDataStream(decryptor);
+        InputStream decrypted = publicKeyEncryptedData.getDataStream(decrypt);
         // PGP decrypted data objects using privateKey
         PGPObjectFactory decryptedObjects = new PGPObjectFactory(decrypted, new JcaKeyFingerprintCalculator());
         Object decryptedObject = decryptedObjects.nextObject();
@@ -514,7 +510,7 @@ public class PGP {
                                         int algorithm,
                                         boolean radix64,
                                         boolean compress) throws IOException,PGPException {
-        // literalOutput => compressedStrem => encryptedStream => outputStream
+        // literalOutput => compressedStream => encryptedStream => outputStream
         logger.info("signFile(" + fileToSign + ")");
         OutputStream outputStream;
         String signedFile = fileToSign;
@@ -622,9 +618,9 @@ public class PGP {
      * @param secretKeyFileName {@code String} for the secret key to be found
      * @param publicKeyFileName {@code String} for the public key to be found
      * @param passphrase {@code String} used to decode the {@link PGPSecretKey}
-     * @param fileName {@code String} used to make a new decoded {@link File}
+     * @param outputFileName {@code String} used to make a new decoded {@link File}
      *                       if file name not present use one from encoded data
-     * @return {@link DecryptionVerificationWrapper}
+     * @return {@link DecryptionVerificationWrapper} signature, signature verification and integrity check data
      * @throws IOException
      * @throws PGPException
      * @throws SignatureException
@@ -633,12 +629,11 @@ public class PGP {
                                            String secretKeyFileName,
                                            String publicKeyFileName,
                                            String passphrase,
-                                           String fileName) throws IOException, PGPException {
+                                           String outputFileName) throws IOException, PGPException {
         logger.info("decryptFile(" + inputFileName + ")");
 
         VerificationCode verificationCode = VerificationCode.ERROR;
         DecryptionCode decryptionCode = DecryptionCode.ERROR;
-        String outputFileName = fileName;
 
         InputStream fileInput = new BufferedInputStream(new FileInputStream(inputFileName));
         InputStream secretKeyInput = new BufferedInputStream(new FileInputStream(secretKeyFileName));
@@ -758,7 +753,7 @@ public class PGP {
                     onePassSignature.update(bytes);
                 }
                 // If no file name given set default file name
-                if (fileName.isBlank()) {
+                if (outputFileName.isBlank()) {
                     outputFileName = literalData.getFileName();
                 }
                 FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);

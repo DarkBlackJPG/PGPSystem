@@ -1,7 +1,7 @@
-package sample;
+package etf.openpgp.ts170124dss170372d.sample;
 
-import ExceptionPackage.IncorrectKeyException;
-import ExceptionPackage.KeyNotFoundException;
+import etf.openpgp.ts170124dss170372d.ExceptionPackage.IncorrectKeyException;
+import etf.openpgp.ts170124dss170372d.ExceptionPackage.KeyNotFoundException;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -22,14 +22,14 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.util.io.Streams;
-import pgp.PGP;
-import utility.KeyManager.ExportedKeyData;
-import utility.KeyManager.KeyringManager;
-import utility.RSA;
-import utility.helper.DecryptionVerificationWrapper;
-import utility.helper.DecryptionVerificationWrapper.*;
-import utility.helper.EncryptionWrapper;
-import utility.helper.PasswordDialog;
+import etf.openpgp.ts170124dss170372d.pgp.PGP;
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.ExportedKeyData;
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.KeyringManager;
+import etf.openpgp.ts170124dss170372d.utility.RSA;
+import etf.openpgp.ts170124dss170372d.utility.helper.DecryptionVerificationWrapper;
+import etf.openpgp.ts170124dss170372d.utility.helper.DecryptionVerificationWrapper.*;
+import etf.openpgp.ts170124dss170372d.utility.helper.EncryptionWrapper;
+import etf.openpgp.ts170124dss170372d.utility.helper.PasswordDialog;
 
 import java.io.*;
 import java.math.BigInteger;

@@ -1,7 +1,9 @@
-package utility.helper;
+package etf.openpgp.ts170124dss170372d.utility.helper;
+
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.ExportedKeyData;
 
 public class EncryptionWrapper {
-    private utility.KeyManager.ExportedKeyData element;
+    private ExportedKeyData element;
     private boolean isSelected;
 
     public String getUserName() {
@@ -19,11 +21,11 @@ public class EncryptionWrapper {
         return element.getEmail();
     }
 
-    public utility.KeyManager.ExportedKeyData getElement() {
+    public ExportedKeyData getElement() {
         return element;
     }
 
-    public void setElement(utility.KeyManager.ExportedKeyData element) {
+    public void setElement(ExportedKeyData element) {
         this.element = element;
     }
 

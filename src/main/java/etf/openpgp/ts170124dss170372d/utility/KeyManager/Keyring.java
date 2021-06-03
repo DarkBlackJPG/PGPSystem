@@ -1,7 +1,7 @@
-package utility.KeyManager;
+package etf.openpgp.ts170124dss170372d.utility.KeyManager;
 
-import ExceptionPackage.IncorrectKeyException;
-import ExceptionPackage.KeyNotFoundException;
+import etf.openpgp.ts170124dss170372d.ExceptionPackage.IncorrectKeyException;
+import etf.openpgp.ts170124dss170372d.ExceptionPackage.KeyNotFoundException;
 import org.bouncycastle.openpgp.*;
 
 import java.io.IOException;

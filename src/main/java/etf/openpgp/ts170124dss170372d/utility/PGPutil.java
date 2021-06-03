@@ -1,4 +1,4 @@
-package utility;
+package etf.openpgp.ts170124dss170372d.utility;
 
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.openpgp.*;
@@ -70,89 +70,4 @@ public class PGPutil {
         return null;
     }
 
-
-
-
-
-
-
-
-
-
-
-    /**
-     * A simple routine that opens a key ring file and loads the first available key
-     * suitable for encryption.
-     *
-     * @param inputStream {@link InputStream} to search in containing the public key data
-     * @return the first public key found.
-     * @throws IOException
-     * @throws PGPException
-     */
-    public static PGPPublicKey readPublicKey(InputStream inputStream) throws IOException, PGPException
-    {
-        PGPPublicKeyRingCollection publicKeyRingCollection = new PGPPublicKeyRingCollection(
-                PGPUtil.getDecoderStream(inputStream), new JcaKeyFingerprintCalculator());
-
-        //
-        // we just loop through the collection till we find a key suitable for encryption, in the real
-        // world you would probably want to be a bit smarter about this.
-        Iterator<PGPPublicKeyRing> keyRingIter = publicKeyRingCollection.getKeyRings();
-        while (keyRingIter.hasNext())
-        {
-            PGPPublicKeyRing keyRing = (PGPPublicKeyRing)keyRingIter.next();
-
-            Iterator<PGPPublicKey> keyIter = keyRing.getPublicKeys();
-            while (keyIter.hasNext())
-            {
-                PGPPublicKey key = (PGPPublicKey)keyIter.next();
-
-                if (key.isEncryptionKey())
-                {
-                    return key;
-                }
-            }
-        }
-
-        throw new IllegalArgumentException("Can't find encryption key in key ring.");
-    }
-
-    /**
-     * A simple routine that opens a key ring file and loads the first available key
-     * suitable for signature generation.
-     *
-     * @param input stream to read the secret key ring collection from.
-     * @return a secret key.
-     * @throws IOException on a problem with using the input stream.
-     * @throws PGPException if there is an issue parsing the input stream.
-     */
-    public static PGPSecretKey readSecretKey(InputStream input) throws IOException, PGPException
-    {
-        PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(
-                PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
-
-        //
-        // we just loop through the collection till we find a key suitable for encryption, in the real
-        // world you would probably want to be a bit smarter about this.
-        //
-
-        Iterator<PGPSecretKeyRing> keyRingIter = pgpSec.getKeyRings();
-        while (keyRingIter.hasNext())
-        {
-            PGPSecretKeyRing keyRing = (PGPSecretKeyRing)keyRingIter.next();
-
-            Iterator<PGPSecretKey> keyIter = keyRing.getSecretKeys();
-            while (keyIter.hasNext())
-            {
-                PGPSecretKey key = (PGPSecretKey)keyIter.next();
-
-                if (key.isSigningKey())
-                {
-                    return key;
-                }
-            }
-        }
-
-        throw new IllegalArgumentException("Can't find signing key in key ring.");
-    }
 }

@@ -1,12 +1,10 @@
-package utility;
+package etf.openpgp.ts170124dss170372d.utility;
 
-import com.sun.media.jfxmedia.track.Track;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.Console;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -15,19 +13,19 @@ import java.security.*;
 import java.util.Scanner;
 
 /**
- * @author Sanja Samardzija 2017/0372
- * TrippleDES object that implements 3DES using specified key.
+ *
+ * {@code IDEA} object that implements 3DES using specified key.
  * Encrypts and decrypts data passed as byte array for said key.
  *
  */
-public class TrippleDES {
+public class IDEA {
 
     private static final String PROVIDER = "BC";
-    private static final String ALGORITHM = "DESede";
-    private static final String HASH_ALGORITHM = "SHA-224";
-    private static final String TRIPLE_DES_MODE = "DESede/ECB/PKCS7Padding";
+    private static final String ALGORITHM = "IDEA";
+    private static final String HASH_ALGORITHM = "SHA-1";
+    private static final String IDEA_MODE = "IDEA/ECB/ISO7816-4Padding";
     private static final Charset FORMAT = StandardCharsets.UTF_8;
-    private static final Integer BYTE_KEY_SIZE = 24;
+    private static final Integer BYTE_KEY_SIZE = 16;
 
     private Cipher encrypter ;
     private Cipher decrypter;
@@ -35,9 +33,9 @@ public class TrippleDES {
     private byte[] key;
 
     /**
-     *  Returns a {@code TrippleDES} object that implements 3DES using specified key.
+     *  Returns a {@code IDEA} object that implements 3DES using specified key.
      *
-     * <p> A new {@code TrippleDES} object implementing the DESede/CBC/PKCS7Padding algorithm with
+     * <p> A new {@code IDEA} object implementing the DESede/CBC/PKCS7Padding algorithm with
      * 24 byte key (3 different keys) from the Bouncy Castel provider.
      *
      * @param keyString String key to be used for ciphering
@@ -46,21 +44,22 @@ public class TrippleDES {
      * @throws NoSuchProviderException
      * @throws InvalidKeyException
      */
-    private TrippleDES(String keyString) throws NoSuchPaddingException, NoSuchAlgorithmException,
+    private IDEA(String keyString) throws NoSuchPaddingException, NoSuchAlgorithmException,
             NoSuchProviderException, InvalidKeyException {
         Security.addProvider(new BouncyCastleProvider());
 
         // cipher
-        encrypter = Cipher.getInstance(TRIPLE_DES_MODE, PROVIDER);
-        decrypter = Cipher.getInstance(TRIPLE_DES_MODE, PROVIDER);
+        encrypter = Cipher.getInstance(IDEA_MODE, PROVIDER);
+        decrypter = Cipher.getInstance(IDEA_MODE, PROVIDER);
 
-        //3DES key of 24B(192b) => 3 different keys(8B*3)
+        //IDEA key of 16B(128b)
         key = new byte[BYTE_KEY_SIZE];
 
         MessageDigest digester = MessageDigest.getInstance(HASH_ALGORITHM, PROVIDER);
-        byte[] keyHash = digester.digest(keyString.getBytes(FORMAT));
-//        System.out.println(keyP);
-        System.arraycopy(keyHash, 0 , key, 0, BYTE_KEY_SIZE);
+//        byte[] keyHash = digester.digest(keyString.getBytes(FORMAT));
+//        System.out.println(keyHash);
+//        System.arraycopy(keyHash, 0 , key, 0, BYTE_KEY_SIZE);
+        System.arraycopy(digester.digest(keyString.getBytes(FORMAT)), 0 , key, 0, BYTE_KEY_SIZE);
         SecretKeySpec secretKeySpec =  new SecretKeySpec(key, 0, BYTE_KEY_SIZE, ALGORITHM);
         encrypter.init(Cipher.ENCRYPT_MODE, secretKeySpec);
         decrypter.init(Cipher.DECRYPT_MODE, secretKeySpec);
@@ -97,30 +96,30 @@ public class TrippleDES {
     }
 
     /**
-     * For testing of {@code TrippleDES} class using a console
+     * For testing of {@code IDEA} class using a console
      * @param args not used
      */
     public static void main(String[] args) {
         try {
             Scanner in = new Scanner(System.in);
 
-            String input, desKey;
+            String input, ideaKey;
             byte[] output, reversed;
-            utility.TrippleDES des;
-            System.out.println("TrippleDES Encryption example");
+            IDEA idea;
+            System.out.println("IDEA Encryption example");
             System.out.println("----------------------");
             System.out.println("Enter text to encrypt?");
             input = in.nextLine();
             input = input.equals("") ? input : "HELLO";
             System.out.println("Enter a key?");
-            desKey = in.nextLine();
+            ideaKey = in.nextLine();
 
-            desKey = desKey.equals("") ? desKey : "12345678";
-            des = new utility.TrippleDES(desKey);
+            ideaKey = ideaKey.equals("") ? ideaKey : "12345678";
+            idea = new IDEA(ideaKey);
 
-            output = des.encrypt(input.getBytes(FORMAT));
+            output = idea.encrypt(input.getBytes(FORMAT));
             System.out.println("cipherText (hex):\n" + Hex.toHexString(output));
-            reversed = des.decrypt(output);
+            reversed = idea.decrypt(output);
             System.out.println("Plain text:\n" + new String(reversed, FORMAT));
 
             System.out.println("Enter absolute path to file for encryption?");
@@ -133,14 +132,14 @@ public class TrippleDES {
                 input = input.equals("") ? input : "C:\\Users\\Korisnik\\Desktop\\New Text Document.txt";
                 file =  new File(input);
             }
-            output = des.encrypt(Files.readAllBytes(file.toPath()));
+            output = idea.encrypt(Files.readAllBytes(file.toPath()));
             System.out.println("Enter a key?");
-            desKey = in.nextLine();
-            desKey = desKey.equals("") ? desKey : "12345678";
+            ideaKey = in.nextLine();
+            ideaKey = ideaKey.equals("") ? ideaKey : "12345678";
 
-            des = new utility.TrippleDES(desKey);
+            idea = new IDEA(ideaKey);
             System.out.println("cipherText (hex):\n" + Hex.toHexString(output));
-            reversed = des.decrypt(output);
+            reversed = idea.decrypt(output);
             System.out.println("Plain text:\n" + new String(reversed, FORMAT));
         } catch(Exception e){
             System.out.println("Exception" + e);

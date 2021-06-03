@@ -1,8 +1,8 @@
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.ExportedKeyData;
+import etf.openpgp.ts170124dss170372d.utility.KeyManager.KeyringManager;
+import etf.openpgp.ts170124dss170372d.utility.RSA;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
-import utility.KeyManager.ExportedKeyData;
-import utility.KeyManager.KeyringManager;
-import utility.RSA;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;

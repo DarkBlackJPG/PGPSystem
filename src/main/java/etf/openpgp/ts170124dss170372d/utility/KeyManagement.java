@@ -1,4 +1,4 @@
-package utility;
+package etf.openpgp.ts170124dss170372d.utility;
 
 /**
  * Sadrzi operacije koje se ticu kljuceva i obrade za keyring.
