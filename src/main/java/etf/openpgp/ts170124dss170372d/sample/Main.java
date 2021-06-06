@@ -20,7 +20,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception{
         currentStage = primaryStage;
-        Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("etf.openpgp.ts170124dss170372d.sample.fxml"));
+        Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample.fxml"));
         primaryStage.setTitle("PGP");
         primaryStage.setScene(new Scene(root));
         primaryStage.getIcons().add(new Image("logo.png"));

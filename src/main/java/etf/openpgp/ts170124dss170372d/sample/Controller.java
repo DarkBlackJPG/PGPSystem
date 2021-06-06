@@ -724,6 +724,9 @@ public class Controller {
             os.close();
             in.close();
             new File(defaultOutFileDecrypt).delete();
+            showSuccessDialog("File made",
+                    "Data saved",
+                    "Data successfully saved to specified location.");
         } catch (IOException e) {
             showErrorDialog("Input parameters are incorrect!",
                             "Incorrect filepath",
