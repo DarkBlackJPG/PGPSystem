@@ -591,8 +591,8 @@ public class PGP {
                 literalDataStream.close();
                 break;
             } else {
-                logger.info("bad data in stream");
-                throw new RuntimeException("bad message " + object.getClass().getName());
+//                logger.info("bad data in stream");
+//                throw new RuntimeException("bad message " + object.getClass().getName());
             }
         }
 

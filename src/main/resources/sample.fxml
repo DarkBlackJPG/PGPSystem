@@ -46,12 +46,12 @@
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                   <children>
                       <Button fx:id="browseDecryptionFileChooserTriggerButton" layoutX="208.0" layoutY="70.0" mnemonicParsing="false" onAction="#browseDecryptionFileAction" prefHeight="25.0" prefWidth="98.0" text="Browse" />
-                      <TextField fx:id="browseDecryptionFileLocationTextField"  layoutX="328.0" layoutY="70.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                      <TextField fx:id="browseDecryptionFileLocationTextField" layoutX="328.0" layoutY="70.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
                       <Button fx:id="decryptAndVerifyButton" layoutX="210.0" layoutY="121.0" mnemonicParsing="false" onAction="#startDecryptionAndVerificationButton" prefHeight="25.0" prefWidth="377.0" text="Decrypt and verify" />
-                      <TextArea fx:id="displayDecryptionAndVerificationOutputTextField" editable="false" layoutX="208.0" layoutY="156.0" prefHeight="142.0" prefWidth="381.0" />
-                      <Button fx:id="saveDecryptionFileLocationButton" layoutX="210.0" layoutY="334.0" mnemonicParsing="false" onAction="#chooseDecryptionFileLocation" text="Save file location" />
-                      <TextField fx:id="decryptionFileLocationTextField" layoutX="328.0" layoutY="334.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
-                      <Button fx:id="saveDecryptionFileButton" layoutX="210.0" layoutY="385.0" mnemonicParsing="false" onAction="#saveDecryptedFile" prefHeight="25.0" prefWidth="373.0" text="Save" />
+                      <TextArea fx:id="displayDecryptionAndVerificationOutputTextField" editable="false" layoutX="208.0" layoutY="156.0" prefHeight="142.0" prefWidth="381.0"/>
+                      <Button fx:id="saveDecryptionFileLocationButton" disable="true" layoutX="210.0" layoutY="334.0" mnemonicParsing="false" onAction="#chooseDecryptionFileLocation" text="Save file location" />
+                      <TextField fx:id="decryptionFileLocationTextField" disable="true" layoutX="328.0" layoutY="334.0" prefHeight="25.0" prefWidth="258.0" promptText="Path to file" />
+                      <Button fx:id="saveDecryptionFileButton" disable="true" layoutX="210.0" layoutY="385.0" mnemonicParsing="false" onAction="#saveDecryptedFile" prefHeight="25.0" prefWidth="373.0" text="Save" />
                   </children>
               </AnchorPane>
             </content>

@@ -651,24 +651,27 @@ public class Controller {
 
             if (DecryptionCode.containsWarnings(decryptionCode) ||
                 VerificationCode.containsWarnings(verificationCode)){
-                showWarningDialog(title,
-                        header,
-                        text);
+                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-text-inner-color: #e5f558;");
+                displayDecryptionAndVerificationOutputTextField.setText(text);
+                displayDecryptionAndVerificationOutputTextField.setWrapText(true);
+
+                enableDecryptionSaveFile();
             } else if (DecryptionCode.containsErrors(decryptionCode) ||
                     VerificationCode.containsErrors(verificationCode)){
-                showErrorDialog(title,
-                        header,
-                        text);
-            } else {
-                showSuccessDialog(title,
-                        header,
-                        text);
-            }
+                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-text-inner-color: #fc5656;");
+                displayDecryptionAndVerificationOutputTextField.setText(text);
+                displayDecryptionAndVerificationOutputTextField.setWrapText(true);
 
-            InputStream in = new FileInputStream(outFile);
-            displayDecryptionAndVerificationOutputTextField.setText(new String(in.readAllBytes()));
-            displayDecryptionAndVerificationOutputTextField.setWrapText(true);
-            in.close();
+            } else {
+                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-text-inner-color: #3ffc35;");
+                displayDecryptionAndVerificationOutputTextField.setText(text);
+                displayDecryptionAndVerificationOutputTextField.setWrapText(true);
+
+                enableDecryptionSaveFile();
+
+            }
+            //C:\Users\stefa\OneDrive\Desktop\ZPFiles\Files\The-Man-Who-Flew.pdf.asc
+
         } catch (Exception e){
             e.printStackTrace();
             showExceptionDialog("Decryption and Verification",
@@ -677,7 +680,11 @@ public class Controller {
                     e);
         }
     }
-
+    void enableDecryptionSaveFile() {
+        saveDecryptionFileLocationButton.setDisable(false);
+        decryptionFileLocationTextField.setDisable(false);
+        saveDecryptionFileButton.setDisable(false);
+    }
     /**
      * Otvara file search dialog i upisuje u textfield
      *
@@ -690,7 +697,7 @@ public class Controller {
         File fileToDecrypt = new File(browseDecryptionFileLocationTextField.getText());
 
         if (file != null) {
-            decryptionFileLocationTextField.setText(file.getAbsolutePath() + fileToDecrypt.getName().substring(0, fileToDecrypt.getName().length() - 4));
+            decryptionFileLocationTextField.setText(file.getAbsolutePath()+ "\\" + fileToDecrypt.getName().substring(0, fileToDecrypt.getName().length() - 4));
         }
     }
 
