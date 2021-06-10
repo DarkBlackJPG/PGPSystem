@@ -8,6 +8,7 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyEncryptorBuilder;
@@ -219,7 +220,7 @@ public class KeyringManager implements Keyring {
         // TODO: Implementirati
         PGPSecretKey pgpSecretKey = keyRing.getSecretKey();
         try {
-            PGPPrivateKey privateKey = pgpSecretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(password.toCharArray()));
+            PGPPrivateKey privateKey = pgpSecretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(new BouncyCastleProvider()).build(password.toCharArray()));
             removeGivenSecretKeyFromCollection(keyRing);
         } catch (Exception exp) {
             throw new IncorrectKeyException();
@@ -412,7 +413,7 @@ public class KeyringManager implements Keyring {
     @Override
     public PGPPrivateKey decryptSecretKey(PGPSecretKey secretKey, String password) {
         try {
-            return secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(password.toCharArray()));
+            return secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(new BouncyCastleProvider()).build(password.toCharArray()));
         } catch (Exception exp) {
             return null;
         }
@@ -422,7 +423,7 @@ public class KeyringManager implements Keyring {
     @Override
     public boolean checkPasswordMatch(PGPSecretKey secretKey, String password) {
         try {
-            secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(password.toCharArray()));
+            secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(new BouncyCastleProvider()).build(password.toCharArray()));
             return true;
         } catch (Exception exp) {
             return false;

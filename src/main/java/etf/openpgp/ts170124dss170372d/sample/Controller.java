@@ -684,11 +684,13 @@ public class Controller {
      * @param actionEvent
      */
     public void chooseDecryptionFileLocation(ActionEvent actionEvent) {
-        FileChooser fileChooser = new FileChooser();
+        DirectoryChooser fileChooser = new DirectoryChooser();
         fileChooser.setTitle("Open Resource File");
-        File file = fileChooser.showOpenDialog(Main.mainReference.currentStage);
+        File file = fileChooser.showDialog(Main.mainReference.currentStage);
+        File fileToDecrypt = new File(browseDecryptionFileLocationTextField.getText());
+
         if (file != null) {
-            decryptionFileLocationTextField.setText(file.getAbsolutePath());
+            decryptionFileLocationTextField.setText(file.getAbsolutePath() + fileToDecrypt.getName().substring(0, fileToDecrypt.getName().length() - 4));
         }
     }
 
@@ -700,7 +702,7 @@ public class Controller {
      */
     public void saveDecryptedFile(ActionEvent actionEvent) {
         String fileLocation = decryptionFileLocationTextField.getText();
-        File newFile = new File(fileLocation);
+        File newFile = new File(fileLocation + "");
         if (fileLocation.isBlank() || newFile.isDirectory()) {
             showErrorDialog("Input parameters are incorrect!",
                             "Incorrect filepath",
@@ -1069,11 +1071,16 @@ public class Controller {
                             keyData.getUserName(), keyData.getEmail(), keyData.getKeyIDHex());
                     file = new File(file.getAbsolutePath() + "/" + fileName);
                     try {
-                        file.createNewFile();
-                        OutputStream fos = new FileOutputStream(file);
-                        keyManager.exportSecretKey(keyData.getKeyID(), fos);
-                        showSuccessDialog("Export finished successfully!", "The key was successfully exported!",
-                                "The file can be found at: " + file.getAbsolutePath());
+                        String password = passwordInputDialogBoxWithText("Enter the password for the chosen key");
+                        if(keyManager.checkPasswordMatch(keyManager.getSecretKeyById(keyData.getKeyID()), password)) {
+                            file.createNewFile();
+                            OutputStream fos = new FileOutputStream(file);
+                            keyManager.exportSecretKey(keyData.getKeyID(), fos);
+                            showSuccessDialog("Export finished successfully!", "The key was successfully exported!",
+                                    "The file can be found at: " + file.getAbsolutePath());
+                        } else {
+                            showErrorDialog("Incorrect password", "The password you've entered is incorrect!", "Please repeat the process again!");
+                        }
                     } catch (IOException | PGPException | KeyNotFoundException e) {
                         showErrorDialog("Error!", "There was an error while trying to export key " + keyData.getKeyIDHex() + "!", e.getMessage());
                         if (e instanceof KeyNotFoundException) {
