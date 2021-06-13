@@ -568,7 +568,7 @@ public class PGP {
                 InputStream literalDataStream = literalData.getDataStream();
                 byte[] bytes = literalDataStream.readAllBytes();
 
-                if(onePassSignature != null && !VerificationCode.containsErrors(verificationCode)) {
+                if(onePassSignature != null && verificationCode != VerificationCode.NO_PRIVATE_KEY) {
                     onePassSignature.update(bytes);
                 }
                 // If no file name given set default file name
@@ -655,6 +655,10 @@ public class PGP {
             logger.info("signature error");
             verificationCode = VerificationCode.ERROR;
         }
+//        else {
+//            logger.info("signature error");
+//            verificationCode = VerificationCode.ERROR;
+//        }
 
         if (publicKeyEncryptedData != null) {
             if (publicKeyEncryptedData.isIntegrityProtected()) {

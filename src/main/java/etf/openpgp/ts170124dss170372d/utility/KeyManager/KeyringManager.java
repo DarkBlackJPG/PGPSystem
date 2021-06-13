@@ -82,6 +82,7 @@ public class KeyringManager implements Keyring {
 
         } catch (Exception e) {
             System.err.println("Keyring object encountered a fatal error!");
+            e.printStackTrace();
         }
     }
 
