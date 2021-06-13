@@ -563,7 +563,7 @@ public class PGP {
                 InputStream literalDataStream = literalData.getDataStream();
                 byte[] bytes = literalDataStream.readAllBytes();
 
-                if(onePassSignature != null && !VerificationCode.containsErrors(verificationCode)) {
+                if(onePassSignature != null && verificationCode != VerificationCode.NO_PRIVATE_KEY) {
                     onePassSignature.update(bytes);
                 }
                 // If no file name given set default file name
@@ -589,8 +589,21 @@ public class PGP {
                     verificationCode = VerificationCode.INVALID;
                 } else {
                     publicKey = publicKeyRingCollection.getPublicKey(signature.getKeyID());
-                    PGPKeyRing publicKeyRing = publicKeyRingCollection.getPublicKeyRing(publicKey.getKeyID());
-                    exportedKeyData = KeyringManager.extractDataFromKey(publicKeyRing);
+
+                    if(publicKey != null) {
+                        PGPKeyRing publicKeyRing = publicKeyRingCollection.getPublicKeyRing(publicKey.getKeyID());
+                        exportedKeyData = KeyringManager.extractDataFromKey(publicKeyRing);
+                        signature.init(new JcaPGPContentVerifierBuilderProvider()
+                                .setProvider(PROVIDER), publicKey);
+                        if (signature.verify()) {
+                            logger.info("signature verified.");
+                            verificationCode = VerificationCode.VERIFIED;
+                        } else {
+                            logger.info("signature verification failed.");
+                            verificationCode = VerificationCode.FAILED;
+                        }
+                    }
+                    timeOfCreation = signature.getCreationTime();
                 }
             }
 //            else{
@@ -614,22 +627,6 @@ public class PGP {
             timeOfCreation = signature.getCreationTime();
             if(publicKey != null) {
                 if (onePassSignature.verify(signature)) {
-                    logger.info("signature verified.");
-                    verificationCode = VerificationCode.VERIFIED;
-                } else {
-                    logger.info("signature verification failed.");
-                    verificationCode = VerificationCode.FAILED;
-                }
-            }
-        } else
-        if(signatureList != null) {
-            signature = signatureList.get(0);
-            timeOfCreation = signature.getCreationTime();
-            signature.init(new JcaPGPContentVerifierBuilderProvider()
-                    .setProvider(PROVIDER), publicKey);
-
-            if(publicKey != null) {
-                if (signature.verify()) {
                     logger.info("signature verified.");
                     verificationCode = VerificationCode.VERIFIED;
                 } else {
