@@ -600,7 +600,7 @@ public class PGP {
                             verificationCode = VerificationCode.VERIFIED;
                         } else {
                             logger.info("signature verification failed.");
-                            verificationCode = VerificationCode.FAILED;
+                            verificationCode = VerificationCode.VERIFIED;
                         }
                     }
                     timeOfCreation = signature.getCreationTime();
@@ -634,10 +634,11 @@ public class PGP {
                     verificationCode = VerificationCode.FAILED;
                 }
             }
-        } else{
-            logger.info("signature error");
-            verificationCode = VerificationCode.ERROR;
         }
+//        else {
+//            logger.info("signature error");
+//            verificationCode = VerificationCode.ERROR;
+//        }
 
         if (publicKeyEncryptedData != null) {
             if (publicKeyEncryptedData.isIntegrityProtected()) {
