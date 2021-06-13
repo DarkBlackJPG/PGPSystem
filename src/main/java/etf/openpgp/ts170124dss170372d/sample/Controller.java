@@ -573,6 +573,7 @@ public class Controller {
                 FilenameUtils.getExtension(FilenameUtils.getBaseName(fileToDecrypt.getName()));
         defaultOutFileDecrypt = outFile;
         String passphrase = "";
+        String signatureString = "";
 
         try {
             DecryptionVerificationWrapper decryptionResult = PGP.decryptionAndVerification(fileToDecrypt.getAbsolutePath(),
@@ -592,6 +593,18 @@ public class Controller {
                         passphrase, outFile);
                 verificationCode = decryptionResult.getVerificationCode();
             }
+            ExportedKeyData keyData = decryptionResult.getExportedKeyData();
+            if (keyData != null) {
+                if(keyData.getUserName() != null){
+                signatureString = "\nSignature username: " + keyData.getUserName() + " \nemail: <" +
+                        keyData.getEmail() + "> \nkey ID: " + keyData.getKeyIDHex();
+                }else if(keyData.getKeyIDHex() != null){
+                    signatureString = "key ID: " + keyData.getKeyIDHex();
+                }
+            }
+            if(decryptionResult.getTimeOfCreation() != null){
+                signatureString += "\ntime of creation: " + decryptionResult.getTimeOfCreation();
+            }
             switch (verificationCode) {
                 case NOT_PRESENT:
                     verificationAndIntegrity[0] = "not present";
@@ -609,9 +622,7 @@ public class Controller {
                     verificationAndIntegrity[0] = "signature invalid";
                     break;
                 default:
-                    showErrorDialog("Decryption failed!",
-                            "Signature verification!",
-                            "Error occurred during signature verification!");
+                    verificationAndIntegrity[0] = "error";
                     return;
             }
             //integrity check
@@ -633,17 +644,9 @@ public class Controller {
                     verificationAndIntegrity[1] = "no public key found";
                     break;
                 default:
-                    showErrorDialog("Decryption failed!",
-                            "Decryption",
-                            "Error occurred during decryption!");
-                    return;
+                    verificationAndIntegrity[1] = "error";
             }
-            String signatureString = "";
-            ExportedKeyData keyData = decryptionResult.getExportedKeyData();
-            if (keyData != null) {
-                signatureString = "\nSignature username: " + keyData.getUserName() + " \nemail: <" +
-                    keyData.getEmail() + "> \nkey ID: " + keyData.getKeyIDHex();
-            }
+
             String title = "Decryption succeeded!";
             String header = "Signature verification & integrity check";
             String text = "Signature verification: " + verificationAndIntegrity[0] +
@@ -651,26 +654,25 @@ public class Controller {
 
             if (DecryptionCode.containsWarnings(decryptionCode) ||
                 VerificationCode.containsWarnings(verificationCode)){
-                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-text-inner-color: #e5f558;");
+                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-control-inner-background: #e5f558;");
                 displayDecryptionAndVerificationOutputTextField.setText(text);
                 displayDecryptionAndVerificationOutputTextField.setWrapText(true);
 
                 enableDecryptionSaveFile();
             } else if (DecryptionCode.containsErrors(decryptionCode) ||
                     VerificationCode.containsErrors(verificationCode)){
-                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-text-inner-color: #fc5656;");
+                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-control-inner-background: #fc5656;");
                 displayDecryptionAndVerificationOutputTextField.setText(text);
                 displayDecryptionAndVerificationOutputTextField.setWrapText(true);
 
             } else {
-                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-text-inner-color: #3ffc35;");
+                displayDecryptionAndVerificationOutputTextField.setStyle("-fx-control-inner-background: #3ffc35;");
                 displayDecryptionAndVerificationOutputTextField.setText(text);
                 displayDecryptionAndVerificationOutputTextField.setWrapText(true);
 
                 enableDecryptionSaveFile();
 
             }
-            //C:\Users\stefa\OneDrive\Desktop\ZPFiles\Files\The-Man-Who-Flew.pdf.asc
 
         } catch (Exception e){
             e.printStackTrace();

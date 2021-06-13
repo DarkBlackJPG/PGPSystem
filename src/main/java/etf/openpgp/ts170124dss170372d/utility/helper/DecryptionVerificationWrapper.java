@@ -3,6 +3,7 @@ package etf.openpgp.ts170124dss170372d.utility.helper;
 
 import etf.openpgp.ts170124dss170372d.utility.KeyManager.ExportedKeyData;
 
+import java.util.Date;
 import java.util.EnumSet;
 
 /**
@@ -13,6 +14,7 @@ public class DecryptionVerificationWrapper {
     private DecryptionCode decryptionCode;
     private VerificationCode verificationCode;
     private String outputFilePath;
+    private Date timeOfCreation;
 
     public enum DecryptionCode {
         ERROR, NO_INTEGRITY_CHECK, NOT_ENCRYPTED, PASSED, FAILED,
@@ -56,14 +58,31 @@ public class DecryptionVerificationWrapper {
         }
     }
 
+    public String getOutputFilePath() {
+        return outputFilePath;
+    }
+
+    public void setOutputFilePath(String outputFilePath) {
+        this.outputFilePath = outputFilePath;
+    }
+
+    public Date getTimeOfCreation() {
+        return timeOfCreation;
+    }
+
+    public void setTimeOfCreation(Date timeOfCreation) {
+        this.timeOfCreation = timeOfCreation;
+    }
+
     public DecryptionVerificationWrapper(ExportedKeyData exportedKeyData,
                                          DecryptionCode decryptionCode,
                                          VerificationCode verificationCode,
-                                         String outputFilePath) {
+                                         String outputFilePath, Date timeOfCreation) {
         this.exportedKeyData = exportedKeyData;
         this.decryptionCode = decryptionCode;
         this.verificationCode = verificationCode;
         this.outputFilePath = outputFilePath;
+        this.timeOfCreation = timeOfCreation;
     }
 
     public ExportedKeyData getExportedKeyData() {

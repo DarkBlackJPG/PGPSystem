@@ -9,7 +9,6 @@ import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 import org.bouncycastle.util.io.Streams;
-import etf.openpgp.ts170124dss170372d.utility.KeyManager.Keyring;
 import etf.openpgp.ts170124dss170372d.utility.KeyManager.KeyringManager;
 import etf.openpgp.ts170124dss170372d.utility.PGPutil;
 import etf.openpgp.ts170124dss170372d.utility.helper.DecryptionVerificationWrapper;
@@ -457,6 +456,7 @@ public class PGP {
 
         VerificationCode verificationCode = VerificationCode.ERROR;
         DecryptionCode decryptionCode = DecryptionCode.ERROR;
+        Date timeOfCreation = null;
 
         InputStream fileInput = new BufferedInputStream(new FileInputStream(inputFileName));
         InputStream secretKeyInput = new BufferedInputStream(new FileInputStream(secretKeyFileName));
@@ -514,18 +514,18 @@ public class PGP {
                         secretKeyInput.close();
                         publicKeyInput.close();
                         return new DecryptionVerificationWrapper(exportedKeyData,
-                                decryptionCode, verificationCode, outputFileName);
+                                decryptionCode, verificationCode, outputFileName, timeOfCreation);
                     }
                 }
                 if (privateKey == null) {
                     logger.info("no private key found");
-                    verificationCode = VerificationCode.NO_PRIVATE_KEY;
+                    decryptionCode = DecryptionCode.NO_PUBLIC_KEY;
                     fileInput.close();
                     in.close();
                     secretKeyInput.close();
                     publicKeyInput.close();
-                    return new DecryptionVerificationWrapper(exportedKeyData,
-                            decryptionCode, verificationCode, outputFileName);
+//                    return new DecryptionVerificationWrapper(exportedKeyData,
+//                            decryptionCode, verificationCode, outputFileName);
                 }
                 PublicKeyDataDecryptorFactory decrypt = new JcePublicKeyDataDecryptorFactoryBuilder()
                         .setProvider(PROVIDER)
@@ -541,30 +541,21 @@ public class PGP {
                 logger.info("Object instance of PGPOnePassSignatureList");
                 onePassSignatureList = (PGPOnePassSignatureList) object;
                 onePassSignature = onePassSignatureList.get(0);
-
-                publicKey = publicKeyRingCollection.getPublicKey(onePassSignature.getKeyID());
-                if (publicKey == null) {
-                    logger.info("no public key found");
-                    decryptionCode = DecryptionCode.NO_PUBLIC_KEY;
-                    fileInput.close();
-                    in.close();
-                    secretKeyInput.close();
-                    publicKeyInput.close();
-                    return new DecryptionVerificationWrapper(exportedKeyData,
-                            decryptionCode, verificationCode, outputFileName);
-                }
-                if(onePassSignature == null){
+                if (onePassSignature == null) {
                     logger.info("signature invalid");
                     verificationCode = VerificationCode.INVALID;
-                    fileInput.close();
-                    in.close();
-                    secretKeyInput.close();
-                    publicKeyInput.close();
-                    return new DecryptionVerificationWrapper(exportedKeyData,
-                            decryptionCode, verificationCode, outputFileName);
+                } else {
+                    publicKey = publicKeyRingCollection.getPublicKey(onePassSignature.getKeyID());
+                    if (publicKey == null) {
+                        logger.info("no public key found");
+                        verificationCode = VerificationCode.NO_PRIVATE_KEY;
+                    } else {
+                        PGPKeyRing publicKeyRing = publicKeyRingCollection.getPublicKeyRing(publicKey.getKeyID());
+                        exportedKeyData = KeyringManager.extractDataFromKey(publicKeyRing);
+                        onePassSignature.init(new JcaPGPContentVerifierBuilderProvider()
+                                .setProvider(PROVIDER), publicKey);
+                    }
                 }
-                onePassSignature.init(new JcaPGPContentVerifierBuilderProvider()
-                                            .setProvider(PROVIDER), publicKey);
             } else
             if (object instanceof PGPLiteralData) {
                 logger.info("Object instance of PGPLiteralData");
@@ -572,7 +563,7 @@ public class PGP {
                 InputStream literalDataStream = literalData.getDataStream();
                 byte[] bytes = literalDataStream.readAllBytes();
 
-                if(onePassSignature != null) {
+                if(onePassSignature != null && !VerificationCode.containsErrors(verificationCode)) {
                     onePassSignature.update(bytes);
                 }
                 // If no file name given set default file name
@@ -590,17 +581,29 @@ public class PGP {
 
                 literalDataStream.close();
                 break;
-            } else {
+            } else if(object instanceof PGPSignatureList) {
+                signatureList = (PGPSignatureList) object;
+                signature = signatureList.get(0);
+                if(signature == null){
+                    logger.info("signature invalid");
+                    verificationCode = VerificationCode.INVALID;
+                } else {
+                    publicKey = publicKeyRingCollection.getPublicKey(signature.getKeyID());
+                    PGPKeyRing publicKeyRing = publicKeyRingCollection.getPublicKeyRing(publicKey.getKeyID());
+                    exportedKeyData = KeyringManager.extractDataFromKey(publicKeyRing);
+                }
+            }
+//            else{
 //                logger.info("bad data in stream");
 //                throw new RuntimeException("bad message " + object.getClass().getName());
-            }
+//            }
         }
 
-        if(onePassSignature == null && onePassSignatureList == null){
+        if (onePassSignature == null && onePassSignatureList == null && signatureList == null) {
             logger.info("no signature present");
             verificationCode = VerificationCode.NOT_PRESENT;
         } else
-        if (onePassSignature != null  && onePassSignatureList != null) {
+        if (onePassSignature != null && onePassSignatureList != null) {
             Object object = pgpObjects.nextObject();
             if (!(object instanceof PGPSignatureList)) {
                 logger.info("bad data in stream");
@@ -608,16 +611,33 @@ public class PGP {
             }
             signatureList = (PGPSignatureList) object;
             signature = signatureList.get(0);
-            if (onePassSignature.verify(signature)) {
-                PGPKeyRing publicKeyRing = publicKeyRingCollection.getPublicKeyRing(publicKey.getKeyID());
-                exportedKeyData = KeyringManager.extractDataFromKey(publicKeyRing);
-                logger.info("signature verified.");
-                verificationCode = VerificationCode.VERIFIED;
-            } else {
-                logger.info("signature verification failed.");
-                verificationCode = VerificationCode.FAILED;
+            timeOfCreation = signature.getCreationTime();
+            if(publicKey != null) {
+                if (onePassSignature.verify(signature)) {
+                    logger.info("signature verified.");
+                    verificationCode = VerificationCode.VERIFIED;
+                } else {
+                    logger.info("signature verification failed.");
+                    verificationCode = VerificationCode.FAILED;
+                }
             }
-        } else {
+        } else
+        if(signatureList != null) {
+            signature = signatureList.get(0);
+            timeOfCreation = signature.getCreationTime();
+            signature.init(new JcaPGPContentVerifierBuilderProvider()
+                    .setProvider(PROVIDER), publicKey);
+
+            if(publicKey != null) {
+                if (signature.verify()) {
+                    logger.info("signature verified.");
+                    verificationCode = VerificationCode.VERIFIED;
+                } else {
+                    logger.info("signature verification failed.");
+                    verificationCode = VerificationCode.FAILED;
+                }
+            }
+        } else{
             logger.info("signature error");
             verificationCode = VerificationCode.ERROR;
         }
@@ -640,12 +660,13 @@ public class PGP {
             decryptionCode = DecryptionCode.NOT_ENCRYPTED;
         }
 
+
         fileInput.close();
         in.close();
         secretKeyInput.close();
         publicKeyInput.close();
         return new DecryptionVerificationWrapper(exportedKeyData,
-                decryptionCode, verificationCode, outputFileName);
+                decryptionCode, verificationCode, outputFileName, timeOfCreation);
     }
 
     /**
