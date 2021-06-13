@@ -1,12 +1,16 @@
 package etf.openpgp.ts170124dss170372d.pgp;
 
 import etf.openpgp.ts170124dss170372d.utility.KeyManager.ExportedKeyData;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.apache.tools.ant.taskdefs.Input;
 import org.bouncycastle.bcpg.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 import org.bouncycastle.util.io.Streams;
 import etf.openpgp.ts170124dss170372d.utility.KeyManager.KeyringManager;
@@ -14,11 +18,9 @@ import etf.openpgp.ts170124dss170372d.utility.PGPutil;
 import etf.openpgp.ts170124dss170372d.utility.helper.DecryptionVerificationWrapper;
 import etf.openpgp.ts170124dss170372d.utility.helper.DecryptionVerificationWrapper.*;
 import etf.openpgp.ts170124dss170372d.utility.helper.EncryptionWrapper;
-
+import org.bouncycastle.openpgp.examples.*;
 import java.io.*;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.SignatureException;
+import java.security.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -433,6 +435,7 @@ public class PGP {
         return signedFile;
     }
 
+
     /**
      *  Decrypt file with given name and verify its signatures
      *
@@ -546,10 +549,12 @@ public class PGP {
                     verificationCode = VerificationCode.INVALID;
                 } else {
                     publicKey = publicKeyRingCollection.getPublicKey(onePassSignature.getKeyID());
+
                     if (publicKey == null) {
                         logger.info("no public key found");
                         verificationCode = VerificationCode.NO_PRIVATE_KEY;
                     } else {
+
                         PGPKeyRing publicKeyRing = publicKeyRingCollection.getPublicKeyRing(publicKey.getKeyID());
                         exportedKeyData = KeyringManager.extractDataFromKey(publicKeyRing);
                         onePassSignature.init(new JcaPGPContentVerifierBuilderProvider()
@@ -584,19 +589,19 @@ public class PGP {
             } else if(object instanceof PGPSignatureList) {
                 signatureList = (PGPSignatureList) object;
                 signature = signatureList.get(0);
+
                 if(signature == null){
                     logger.info("signature invalid");
                     verificationCode = VerificationCode.INVALID;
                 } else {
                     publicKey = publicKeyRingCollection.getPublicKey(signature.getKeyID());
+                    signature.init(new BcPGPContentVerifierBuilderProvider(), publicKey);
+                    System.out.println(
+                            signature.verify());
                     PGPKeyRing publicKeyRing = publicKeyRingCollection.getPublicKeyRing(publicKey.getKeyID());
                     exportedKeyData = KeyringManager.extractDataFromKey(publicKeyRing);
                 }
             }
-//            else{
-//                logger.info("bad data in stream");
-//                throw new RuntimeException("bad message " + object.getClass().getName());
-//            }
         }
 
         if (onePassSignature == null && onePassSignatureList == null && signatureList == null) {
@@ -613,6 +618,7 @@ public class PGP {
             signature = signatureList.get(0);
             timeOfCreation = signature.getCreationTime();
             if(publicKey != null) {
+
                 if (onePassSignature.verify(signature)) {
                     logger.info("signature verified.");
                     verificationCode = VerificationCode.VERIFIED;
@@ -625,10 +631,18 @@ public class PGP {
         if(signatureList != null) {
             signature = signatureList.get(0);
             timeOfCreation = signature.getCreationTime();
+//            signature.init(new JcaPGPContentVerifierBuilderProvider()
+//                    .setProvider(PROVIDER), publicKey);
             signature.init(new JcaPGPContentVerifierBuilderProvider()
                     .setProvider(PROVIDER), publicKey);
 
             if(publicKey != null) {
+                InputStream  fileInputStream = new BufferedInputStream(new FileInputStream(inputFileName.trim().substring(0, inputFileName.length() - 4)));
+                int ch;
+                while ((ch = fileInputStream.read()) >= 0) {
+                    signature.update((byte)ch);
+                }
+
                 if (signature.verify()) {
                     logger.info("signature verified.");
                     verificationCode = VerificationCode.VERIFIED;
