@@ -738,6 +738,10 @@ public class Controller {
             showSuccessDialog("File made",
                     "Data saved",
                     "Data successfully saved to specified location.");
+        } catch (FileNotFoundException e) {
+            showErrorDialog("No data!",
+                    "No data found",
+                    "No data to save to the specified file!");
         } catch (IOException e) {
             showErrorDialog("Input parameters are incorrect!",
                             "Incorrect filepath",
